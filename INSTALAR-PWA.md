@@ -60,19 +60,18 @@ explicar o motivo em vez de esconder o botão.
 
 `X:\Mercado` é um repositório git local (sem remote — o desenvolvimento fica só aqui).
 O **repositório publicado** é o `uni9aluno/mercado`, separado, com só os arquivos do
-site. Manter um clone dele numa pasta fixa e sincronizar:
+site. O clone dele já está em **`C:\Users\Heimdall\mercado-pub`** (se sumir, refazer
+com `git -c http.sslBackend=schannel clone https://github.com/uni9aluno/mercado.git`).
+
+A cada atualização, do Git Bash:
 
 ```bash
-# uma vez: clonar o repo publicado
-git -c http.sslBackend=schannel clone https://github.com/uni9aluno/mercado.git ~/mercado-pub
-
-# a cada atualização:
-cd X:/Mercado && git commit -am "..."                 # 1. versionar a mudança no projeto
-cp MercadoDoCasal.html manifest.json sw.js ~/mercado-pub/   # 2. copiar o que mudou
-cd ~/mercado-pub
-git commit -am "Atualizar app"
-git -c http.sslBackend=schannel push                  # 3. publicar
+cd /x/Mercado && git commit -am "..."                          # 1. versionar no projeto
+cp MercadoDoCasal.html manifest.json sw.js ~/mercado-pub/      # 2. copiar o que mudou
+cd ~/mercado-pub && git commit -am "Atualizar app" && git push # 3. publicar
 ```
+
+(No Git Bash, `~` é `C:\Users\Heimdall` e `/x/Mercado` é `X:\Mercado`.)
 
 > O `-c http.sslBackend=schannel` é obrigatório nesta rede (o proxy usa um certificado
 > próprio que o OpenSSL do Git recusa). Já está no `git config --global`, então um
