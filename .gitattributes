@@ -1,0 +1,6 @@
+# O HTML do app é minificado e depende de finais de linha estáveis — forçar LF em tudo.
+* text=auto eol=lf
+*.html  text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf

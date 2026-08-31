@@ -1,0 +1,21 @@
+# Backups antigos do app — o histórico agora é o git. Se algum reaparecer, é lixo.
+MercadoDoCasal-corrigido*.bak.html
+MercadoDoCasal*.pre-*.html
+MercadoDoCasal*.apos-*.html
+
+# Arquivos de trabalho de patch/auditoria (ficam no scratchpad, nunca no repo)
+*_patch.js
+_compare_*.js
+audit_*.js
+build_*.js
+check_*.js
+final_audit.js
+serve.js
+
+# Config local do Claude Code (preferências da máquina)
+.claude/settings.local.json
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
