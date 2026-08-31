@@ -1,7 +1,7 @@
 ```markdown
 # Plano de Evolução — Mercado do Casal
 
-**Base:** `MercadoDoCasal-corrigido.html` (schema v2, linha 11 CSS, linha 360 app)
+**Base (quando o plano foi escrito):** `MercadoDoCasal-corrigido.html`, schema v2, CSS na linha 11, app na linha 360. **Hoje:** o arquivo é `MercadoDoCasal.html`, schema v4, app na linha **361** (a 360 é o `<script>` do Quagga2). Ondas 1–3 concluídas — ver `HANDOFF.md`.
 **Princípios:** Arquivo único, zero backend, offline absoluto, privacidade total, APIs nativas do navegador.
 **Regras invioláveis:** Ver `CLAUDE.md` — âncoras de string, patches de trás para frente, Tailwind pré-compilado auditado na linha 11, `db.version(1)` e `db.version(2)` nunca removidos, `active` como `0`/`1` nunca booleano.
 
