@@ -1,5 +1,6 @@
 export { Btn, type BtnVariant } from "./Btn";
-export { Field, Input, Select, inputCls } from "./Field";
+export { Field, Input, Select } from "./Field";
+export { inputCls, selectOnFocus } from "./formHelpers";
 export { Modal } from "./Modal";
 export { Dica } from "./Dica";
 export { Stat, MiniStat, Empty, type Tone } from "./Stat";

@@ -1,11 +1,5 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
-
-export const inputCls =
-  "w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500";
-
-function selectOnFocus(e: React.FocusEvent<HTMLInputElement>) {
-  if (e.target.type === "number") e.target.select();
-}
+import { inputCls, selectOnFocus } from "./formHelpers";
 
 export function Field({ label, children }: { label?: ReactNode; children: ReactNode }) {
   return (

@@ -1,4 +1,4 @@
-import { inputCls } from "./Field";
+import { inputCls } from "./formHelpers";
 
 interface Props {
   value: string;

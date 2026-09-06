@@ -36,6 +36,9 @@ export const FREQUENCIES: Frequency[] = ["Semanal", "15 dias", "30 dias", "60 di
 
 export const PRIORITIES: Priority[] = ["Alta", "Média", "Baixa"];
 
+/** ordem de ordenação por prioridade (menor = mais no topo). */
+export const PRIO_ORDER: Record<Priority, number> = { Alta: 0, Média: 1, Baixa: 2 };
+
 export const UNITS = [
   "kg",
   "un",
