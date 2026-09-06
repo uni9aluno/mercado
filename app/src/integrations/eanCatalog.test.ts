@@ -55,9 +55,7 @@ describe("lookupEan — Supabase", () => {
   });
 
   it("imageUrl é null quando a linha não traz image_url", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      resp([{ name: "Sal", brand: "" }]),
-    );
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(resp([{ name: "Sal", brand: "" }]));
     const d = await lookupEan("789", base);
     expect(d?.imageUrl).toBeNull();
   });
@@ -79,7 +77,7 @@ describe("lookupEan — Open Food Facts (reserva)", () => {
     f.mockResolvedValueOnce(resp([])); // Supabase: nada
     f.mockResolvedValueOnce(
       resp({
-        status: 1,
+        status: "success",
         product: {
           product_name: "Leite",
           brands: "Marca, Outra",
@@ -98,6 +96,24 @@ describe("lookupEan — Open Food Facts (reserva)", () => {
       source: "off",
     });
     expect(f).toHaveBeenCalledTimes(2);
+    expect(String(f.mock.calls[1][0])).toContain("/api/v3/product/789.json");
+    expect(String(f.mock.calls[1][0])).toContain("product_type=all");
+  });
+
+  it("consulta a OFF sem URL ou chave do Supabase", async () => {
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockResolvedValueOnce(
+      resp({ status: "success", product: { product_name: "Arroz", quantity: "5 kg" } }),
+    );
+    const d = await lookupEan("789", {
+      enabled: true,
+      url: "",
+      anonKey: "",
+      contribute: false,
+      off: true,
+    });
+    expect(d).toMatchObject({ name: "Arroz", packageSize: 5, packageUnit: "kg", source: "off" });
+    expect(f).toHaveBeenCalledTimes(1);
   });
 });
 

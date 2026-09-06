@@ -1,5 +1,19 @@
 # Handoff — Ondas 1 e 2 do plano de evolução
 
+## Ajuste pós-Fase 6 — largura e EAN sem chave (06/09/2026)
+
+- Shell desktop ampliado de `max-w-5xl` para `max-w-7xl`; os cartões e bordas
+  aproveitam melhor a largura, sem introduzir overflow no mobile.
+- Open Food Facts atualizada da API v2 para a v3 universal (`product_type=all`).
+- Preenchimento automático por EAN agora vem ligado e funciona sem Supabase:
+  busca local primeiro e, se o código for novo, consulta a base pública sozinha.
+- Supabase ficou opcional, usado apenas como catálogo prioritário compartilhado e
+  para contribuição de cadastros. URL + anon key não são necessárias para a OFF.
+- Teste real no navegador com `3017624010701`: Nutella, Ferrero, 400 g e foto
+  preenchidos automaticamente; o produto de teste não foi salvo.
+
+---
+
 ## Reescrita Vite — Fase 6 (06/09/2026)
 
 - Migração real `MercadoDB` v4→v5 validada no navegador, na mesma origem, preservando

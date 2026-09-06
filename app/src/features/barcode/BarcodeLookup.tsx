@@ -6,10 +6,9 @@
 //  GTIN + busca EXATA E LOCAL no índice `products.barcode`
 //  (`repos.products.byBarcode`).
 //
-//  Diferença do original: quando o "Catálogo EAN" está ligado
-//  (`settings.eanCatalog.enabled`), o ramo "produto não cadastrado" ganha um
-//  botão "Buscar dados online" ANTES de "Cadastrar produto novo" — ele consulta
-//  `lookupEan` e, se achou, baixa a foto (best-effort) e entrega tudo via
+//  Diferença do original: quando o código não existe localmente, consulta as
+//  fontes online automaticamente. Open Food Facts funciona sem configuração;
+//  Supabase é opcional. Se achar, baixa a foto (best-effort) e entrega tudo via
 //  `onCreate` como prefill do formulário de cadastro.
 //
 //  Sem `store`: produtos, preços e mapas vêm dos hooks. Quem chama fornece
@@ -20,7 +19,7 @@ import { useState } from "react";
 import { repos } from "@/data";
 import { useMaps, usePriceIndex, useProducts, useSetting } from "@/hooks";
 import { gtinValido, normalizarCodigo } from "@/domain/barcode";
-import { lookupEan, type EanData } from "@/integrations/eanCatalog";
+import { DEFAULT_EAN_CONFIG, lookupEan, type EanData } from "@/integrations/eanCatalog";
 import { fetchImageDataUri } from "@/integrations/image";
 import { Btn, Icon, Input, Modal, ProductPicker } from "@/ui";
 import { fmt } from "@/lib/text";
@@ -81,6 +80,9 @@ export function BarcodeLookup({
   const { priceIndex } = usePriceIndex();
   const { productById } = useMaps();
   const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
+  const eanConfig = eanCatalog ?? DEFAULT_EAN_CONFIG;
+  const onlineDisponivel =
+    eanConfig.enabled && (eanConfig.off || (!!eanConfig.url.trim() && !!eanConfig.anonKey.trim()));
 
   const [codigo, setCodigo] = useState("");
   const [achados, setAchados] = useState<Product[]>([]);
@@ -91,6 +93,27 @@ export function BarcodeLookup({
   const [online, setOnline] = useState(false);
   const [avisoOnline, setAvisoOnline] = useState("");
 
+  const buscarOnline = async (ean: string) => {
+    if (!onlineDisponivel) return;
+    setOnline(true);
+    setAvisoOnline("");
+    try {
+      const dados = await lookupEan(ean, eanConfig);
+      if (!dados) {
+        setAvisoOnline(
+          "Nada encontrado no catálogo online para este código. Cadastre manualmente.",
+        );
+        return;
+      }
+      const image = dados.imageUrl ? await fetchImageDataUri(dados.imageUrl) : null;
+      onCreate(prefillDeEan(ean, dados, image));
+    } catch {
+      setAvisoOnline("Não foi possível consultar o catálogo online agora.");
+    } finally {
+      setOnline(false);
+    }
+  };
+
   const buscar = async (q: string) => {
     const w = normalizarCodigo(q);
     if (!w) return;
@@ -99,8 +122,10 @@ export function BarcodeLookup({
     setLinking(false);
     setAvisoOnline("");
     try {
-      setAchados(await repos.products.byBarcode(w));
+      const encontrados = await repos.products.byBarcode(w);
+      setAchados(encontrados);
       setBuscou(true);
+      if (!encontrados.length && onlineDisponivel) await buscarOnline(w);
     } finally {
       setConsultando(false);
     }
@@ -117,11 +142,7 @@ export function BarcodeLookup({
       produto.barcode &&
       produto.barcode !== codigo &&
       !confirm(
-        "Este produto já tem o código " +
-          produto.barcode +
-          ". Substituir por " +
-          codigo +
-          "?",
+        "Este produto já tem o código " + produto.barcode + ". Substituir por " + codigo + "?",
       )
     ) {
       return;
@@ -129,27 +150,6 @@ export function BarcodeLookup({
     await repos.products.update(productId, { barcode: codigo });
     setLinking(false);
     await buscar(codigo);
-  };
-
-  const buscarOnline = async () => {
-    if (!eanCatalog?.enabled) return;
-    setOnline(true);
-    setAvisoOnline("");
-    try {
-      const dados = await lookupEan(codigo, eanCatalog);
-      if (!dados) {
-        setAvisoOnline(
-          "Nada encontrado no catálogo online para este código. Cadastre manualmente.",
-        );
-        return;
-      }
-      const image = dados.imageUrl ? await fetchImageDataUri(dados.imageUrl) : null;
-      onCreate(prefillDeEan(codigo, dados, image));
-    } catch {
-      setAvisoOnline("Não foi possível consultar o catálogo online agora.");
-    } finally {
-      setOnline(false);
-    }
   };
 
   const rotulo = (p: Product) =>
@@ -160,8 +160,8 @@ export function BarcodeLookup({
       <div className="mb-3 flex items-start gap-3 rounded-xl bg-blue-50 p-3">
         <Icon.tag size={20} className="mt-0.5 flex-shrink-0 text-blue-700" />
         <p className="text-sm text-blue-700">
-          {eanCatalog?.enabled
-            ? "A consulta parte do catálogo salvo neste aparelho. Você pode digitar ou escanear o código, e buscar os dados de um produto novo no catálogo online."
+          {onlineDisponivel
+            ? "A consulta parte do catálogo deste aparelho. Se o código for novo, o app busca os dados online automaticamente."
             : "A consulta usa somente o catálogo salvo neste aparelho. Você pode digitar ou escanear o código."}
         </p>
       </div>
@@ -194,11 +194,7 @@ export function BarcodeLookup({
       </div>
 
       {canScanBarcode() ? (
-        <Btn
-          variant="secondary"
-          className="mb-3 w-full"
-          onClick={() => setScanAberto(true)}
-        >
+        <Btn variant="secondary" className="mb-3 w-full" onClick={() => setScanAberto(true)}>
           <Icon.tag size={16} />
           Escanear com a câmera
         </Btn>
@@ -217,8 +213,8 @@ export function BarcodeLookup({
 
       {buscou && !gtinValido(codigo) && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
-          <Icon.alert size={16} className="flex-shrink-0" />
-          O código não parece um GTIN válido, mas a busca local foi realizada mesmo assim.
+          <Icon.alert size={16} className="flex-shrink-0" />O código não parece um GTIN válido, mas
+          a busca local foi realizada mesmo assim.
         </div>
       )}
 
@@ -298,10 +294,14 @@ export function BarcodeLookup({
                 </div>
               )}
               <div className="flex flex-col gap-2">
-                {eanCatalog?.enabled && (
-                  <Btn variant="secondary" onClick={() => void buscarOnline()} disabled={online}>
+                {onlineDisponivel && (
+                  <Btn
+                    variant="secondary"
+                    onClick={() => void buscarOnline(codigo)}
+                    disabled={online}
+                  >
                     <Icon.search size={16} />
-                    {online ? "Buscando…" : "Buscar dados online"}
+                    {online ? "Buscando dados online…" : "Tentar busca online novamente"}
                   </Btn>
                 )}
                 <Btn onClick={() => onCreate({ barcode: codigo })}>

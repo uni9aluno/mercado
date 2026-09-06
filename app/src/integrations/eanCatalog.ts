@@ -1,9 +1,9 @@
 // ===========================================================================
 //  Catálogo de códigos de barras (EAN) — lógica de REDE.
 //
-//  Fonte primária: uma tabela `ean_catalog` num projeto Supabase do próprio
-//  usuário (URL + anon key ficam em `settings.eanCatalog`). Reserva opcional:
-//  Open Food Facts (base pública, sem chave).
+//  Fonte primária opcional: uma tabela `ean_catalog` num projeto Supabase do
+//  usuário. Reserva padrão: Open Food Facts v3 (base pública, sem chave), com
+//  `product_type=all` para cobrir alimentos, higiene, limpeza e outros itens.
 //
 //  Estas funções são consumidas na Fase 5 pelo BarcodeLookup. Aqui só existe
 //  a camada HTTP — sem React, sem Dexie, sem `document`/canvas. Qualquer
@@ -25,6 +25,15 @@ export interface EanCatalogConfig {
   off: boolean;
 }
 
+/** Funciona desde o primeiro uso, sem exigir configuração ou chave. */
+export const DEFAULT_EAN_CONFIG: EanCatalogConfig = {
+  enabled: true,
+  url: "",
+  anonKey: "",
+  contribute: false,
+  off: true,
+};
+
 export interface EanData {
   name: string;
   brand: string;
@@ -38,13 +47,10 @@ export interface EanData {
 }
 
 const TIMEOUT_MS = 6000;
-const OFF_BASE = "https://world.openfoodfacts.org/api/v2/product/";
+const OFF_BASE = "https://world.openfoodfacts.org/api/v3/product/";
 
 /** fetch com AbortController de 6s; devolve `null` em qualquer falha/timeout. */
-async function fetchComTimeout(
-  url: string,
-  init?: RequestInit,
-): Promise<Response | null> {
+async function fetchComTimeout(url: string, init?: RequestInit): Promise<Response | null> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -66,9 +72,7 @@ function temConfigSupabase(cfg: EanCatalogConfig): boolean {
 }
 
 /** "500 g", "1,5 L", "200ml" → { size, unit }. `null` quando não dá pra ler. */
-export function parseQuantidade(
-  q: unknown,
-): { size: number; unit: string } | null {
+export function parseQuantidade(q: unknown): { size: number; unit: string } | null {
   if (typeof q !== "string") return null;
   const m = q
     .trim()
@@ -96,26 +100,24 @@ interface OffProduct {
   image_front_small_url?: string;
 }
 
+interface OffResponse {
+  status?: string | number;
+  product?: OffProduct;
+}
+
 /**
  * Busca um EAN. Ordem: (1) Supabase por igualdade exata; (2) se `cfg.off` e nada
  * veio, Open Food Facts. Timeout de 6s em cada etapa. Config incompleta pula a
  * etapa Supabase. Retorno `null` = "não está em lugar nenhum que consultei".
  */
-export async function lookupEan(
-  ean: string,
-  cfg: EanCatalogConfig,
-): Promise<EanData | null> {
+export async function lookupEan(ean: string, cfg: EanCatalogConfig): Promise<EanData | null> {
   const codigo = String(ean ?? "").replace(/\D/g, "");
   if (!codigo) return null;
 
   // ---- 1. Supabase ----
   if (cfg.enabled && temConfigSupabase(cfg)) {
     const base = cfg.url.trim().replace(/\/+$/, "");
-    const url =
-      base +
-      "/rest/v1/ean_catalog?ean=eq." +
-      encodeURIComponent(codigo) +
-      "&select=*";
+    const url = base + "/rest/v1/ean_catalog?ean=eq." + encodeURIComponent(codigo) + "&select=*";
     const res = await fetchComTimeout(url, { headers: supabaseHeaders(cfg.anonKey) });
     if (res && res.ok) {
       const linhas = (await res.json().catch(() => null)) as SupabaseRow[] | null;
@@ -137,19 +139,17 @@ export async function lookupEan(
     }
   }
 
-  // ---- 2. Open Food Facts (reserva) ----
-  // Só roda com a busca online ligada E o toggle da reserva marcado.
+  // ---- 2. Open Food Facts (padrão sem chave) ----
   if (cfg.enabled && cfg.off) {
     const url =
       OFF_BASE +
       encodeURIComponent(codigo) +
-      ".json?fields=product_name,brands,quantity,image_front_small_url";
+      ".json?fields=product_name,brands,quantity,image_front_small_url&product_type=all";
     const res = await fetchComTimeout(url);
     if (res && res.ok) {
-      const body = (await res.json().catch(() => null)) as
-        | { status?: number; product?: OffProduct }
-        | null;
-      const p = body && body.status === 1 ? body.product : null;
+      const body = (await res.json().catch(() => null)) as OffResponse | null;
+      const sucesso = body?.status === "success" || body?.status === 1;
+      const p = sucesso ? body?.product : null;
       if (p && (p.product_name || p.brands)) {
         const qt = parseQuantidade(p.quantity);
         return {
@@ -181,10 +181,7 @@ export interface ContribRecord {
  * Supabase tratar como upsert pela PK (`ean`). Sem imagem, só texto.
  * Fire-and-forget: falha em silêncio.
  */
-export async function contributeEan(
-  rec: ContribRecord,
-  cfg: EanCatalogConfig,
-): Promise<void> {
+export async function contributeEan(rec: ContribRecord, cfg: EanCatalogConfig): Promise<void> {
   if (!(cfg.enabled && cfg.contribute && rec.barcode)) return;
   if (!temConfigSupabase(cfg)) return;
 
@@ -216,7 +213,7 @@ export async function contributeEan(
 
 /**
  * Testa a conexão com o Supabase: um GET mínimo em `ean_catalog?limit=1`.
- * Usado pelo botão "Testar conexão" da tela Config.
+ * Usado pelo botão "Testar Supabase" da tela Config.
  */
 export async function testarConexao(
   url: string,

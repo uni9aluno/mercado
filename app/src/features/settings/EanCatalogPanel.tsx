@@ -8,11 +8,11 @@ import { inputCls } from "@/ui";
 import { Panel } from "./Panel";
 
 const VAZIO: Omit<EanCatalogSettings, "key"> = {
-  enabled: false,
+  enabled: true,
   url: "",
   anonKey: "",
   contribute: false,
-  off: false,
+  off: true,
 };
 
 function Toggle({
@@ -29,8 +29,7 @@ function Toggle({
   return (
     <label
       className={
-        "flex items-center gap-2 py-1.5 text-sm " +
-        (disabled ? "text-gray-400" : "text-gray-700")
+        "flex items-center gap-2 py-1.5 text-sm " + (disabled ? "text-gray-400" : "text-gray-700")
       }
     >
       <input
@@ -69,7 +68,7 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
     }
   }, [salvo]);
 
-  const semCredenciais = !form.url.trim() || !form.anonKey.trim();
+  const semSupabase = !form.url.trim() || !form.anonKey.trim();
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -79,9 +78,9 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
       key: "eanCatalog",
       url: form.url.trim(),
       anonKey: form.anonKey.trim(),
-      enabled: semCredenciais ? false : form.enabled,
-      contribute: semCredenciais ? false : form.contribute,
-      off: semCredenciais ? false : form.off,
+      enabled: form.enabled,
+      contribute: form.enabled && !semSupabase && form.contribute,
+      off: form.enabled && form.off,
     };
     await repos.settings.put(limpo);
     aviso("Catálogo EAN salvo.");
@@ -102,14 +101,14 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
       <Dica
         id="ean-catalog"
         itens={[
-          "Ligado, ao escanear um produto novo o app tenta preencher nome, marca e tamanho a partir de um catálogo online — o seu projeto Supabase e, opcionalmente, a base pública Open Food Facts.",
+          "Ligado, ao escanear um produto novo o app busca automaticamente nome, marca, tamanho e foto na base pública Open Food Facts — sem chave e sem configuração.",
+          "O Supabase é opcional: configure-o apenas se quiser um catálogo próprio compartilhado pelo casal e contribuir com os cadastros que ainda não existem online.",
           "A chave anônima (anon key) fica salva e visível neste aparelho. Use a chave anon (pública) do Supabase, nunca a service_role.",
-          "Só texto é enviado ou recebido. As fotos que você tira dos produtos NÃO são enviadas para lugar nenhum.",
-          "Sem URL e chave preenchidas, os três interruptores ficam desligados.",
+          "Nenhuma foto é enviada ao Supabase. Imagens encontradas na Open Food Facts são reduzidas e guardadas somente neste aparelho.",
         ]}
       />
 
-      <Field label="URL do projeto Supabase">
+      <Field label="URL do projeto Supabase (opcional)">
         <input
           className={inputCls}
           placeholder="https://xxxx.supabase.co"
@@ -119,7 +118,7 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
           spellCheck={false}
         />
       </Field>
-      <Field label="Chave anônima (anon key)">
+      <Field label="Chave anônima — anon key (opcional)">
         <input
           className={inputCls + " font-mono text-xs"}
           placeholder="eyJhbGciOi…"
@@ -132,29 +131,28 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
 
       <div className="mb-3 divide-y divide-gray-100">
         <Toggle
-          label="Ligar busca online"
+          label="Ligar preenchimento automático por EAN"
           checked={form.enabled}
-          disabled={semCredenciais}
           onChange={(v) => set("enabled", v)}
         />
         <Toggle
-          label="Consultar Open Food Facts como reserva"
+          label="Consultar Open Food Facts (sem chave)"
           checked={form.off}
-          disabled={semCredenciais}
+          disabled={!form.enabled}
           onChange={(v) => set("off", v)}
         />
         <Toggle
-          label="Contribuir com meus cadastros"
+          label="Contribuir com meu catálogo Supabase"
           checked={form.contribute}
-          disabled={semCredenciais}
+          disabled={!form.enabled || semSupabase}
           onChange={(v) => set("contribute", v)}
         />
       </div>
 
       <div className="flex gap-2">
         <Btn onClick={salvar}>Salvar</Btn>
-        <Btn variant="secondary" disabled={semCredenciais || testando} onClick={testar}>
-          {testando ? "Testando…" : "Testar conexão"}
+        <Btn variant="secondary" disabled={semSupabase || testando} onClick={testar}>
+          {testando ? "Testando…" : "Testar Supabase"}
         </Btn>
       </div>
 

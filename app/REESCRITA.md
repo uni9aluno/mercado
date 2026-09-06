@@ -58,7 +58,7 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 | Offline | Bom-ter, não obrigatório |
 | Dados do casal | Locais agora (IndexedDB); arquitetura pronta para sync depois |
 | IDs dos registros | UUID em **campo paralelo `uid`** (o Dexie recusa trocar a chave primária — ver abaixo). PK do IndexedDB continua numérica e nunca aparece nas telas. |
-| Fonte de EAN | Supabase primeiro, Open Food Facts de reserva (cascata) |
+| Fonte de EAN | Open Food Facts v3 funciona sem chave; Supabase opcional entra primeiro quando configurado |
 | Base Supabase | Compartilhada, leitura e escrita públicas pela **anon key** (sem OAuth) |
 | Foto do produto | Baixar da Open Food Facts, redimensionar ~200px, embutir como data URI. **Nunca** enviada ao Supabase (contribuição é só texto). |
 | Modo Compra ao finalizar | Itens comprados ficam na lista com status "Comprado" (não somem) |
@@ -107,7 +107,7 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 - Pipeline GitHub Pages verde e URL pública verificada. Relatório completo em
   [`docs/FASE6.md`](docs/FASE6.md).
 
-- 133 testes Vitest verdes, 15 arquivos (migração v4→v5, seed + corrida do
+- 134 testes Vitest verdes, 15 arquivos (migração v4→v5, seed + corrida do
   StrictMode, motor de preços, previsão, comparador, backup, barcode,
   `registrarCompra`, cálculos puros de Dashboard/Calendário/cesta/Lista,
   `buyMode.calc`, `eanCatalog`).

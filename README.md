@@ -38,7 +38,7 @@ Onde uma compra de verdade é lançada: data, mercado, forma de pagamento, quem 
 ### 🏷️ Produtos
 O catálogo de tudo que a casa costuma comprar: nome, marca, categoria, unidade, tamanho de embalagem, preço padrão e preço-alvo, e a frequência esperada de recompra (a cada quantos dias, em média, o produto costuma acabar). É esse cadastro que alimenta as listas de compras e o comparador de preços. Há também um campo **código de barras** e um **"Grupo comparável"** (para agrupar embalagens equivalentes no Comparador). O botão **"Consultar código"** procura um EAN no catálogo deste aparelho — se não achar, oferece cadastrar um produto novo ou vincular o código a um já existente.
 
-O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** funciona no endereço HTTPS ou no PWA instalado. Opcionalmente, a Config permite ligar um catálogo EAN compartilhado no Supabase: a consulta tenta esse catálogo primeiro e usa a Open Food Facts como reserva; nome, marca, peso e foto podem preencher o cadastro. A foto fica apenas no aparelho. Ver **[app/docs/SUPABASE.md](app/docs/SUPABASE.md)** para ativar.
+O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** funciona no endereço HTTPS ou no PWA instalado. Quando o EAN ainda não existe no aparelho, o app consulta automaticamente a API pública Open Food Facts v3, sem chave, e preenche nome, marca, tamanho e foto quando disponíveis. O Supabase é opcional e serve como catálogo compartilhado do casal para códigos que não existam na base pública. A foto fica apenas no aparelho. Ver **[app/docs/SUPABASE.md](app/docs/SUPABASE.md)** para configurar esse catálogo opcional.
 
 ### 📊 Comparar
 A tela onde o histórico vira decisão de onde comprar. Tudo é calculado só com o que já foi registrado neste aparelho — nunca consulta preço na internet.
@@ -72,7 +72,7 @@ O backup agora carrega uma verificação interna: se o arquivo chegar corrompido
 
 ## Como os dados funcionam
 
-As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`) — não há login nem sincronização dos dados do casal. A única integração opcional é o catálogo EAN: quando ativado, consulta e contribuição enviam apenas dados textuais de produto ao Supabase/Open Food Facts.
+As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`) — não há login nem sincronização dos dados do casal. A consulta automática envia somente o EAN à Open Food Facts e pode baixar a foto pública do produto. Se o catálogo Supabase opcional for configurado, a contribuição envia apenas nome, marca e tamanho; nunca fotos ou dados pessoais.
 
 - **Funciona sem internet.** Depois da primeira abertura pelo endereço publicado, o PWA mantém o build em cache.
 - **Cada aparelho tem sua própria cópia.** Para levar os dados do celular para o computador (ou vice-versa), é preciso usar o **backup**: baixar o `.json` em um aparelho e restaurar no outro, em Config.

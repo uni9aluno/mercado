@@ -67,7 +67,7 @@ export default function App() {
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-5xl md:gap-4 md:p-4">
+    <div className="mx-auto flex min-h-full max-w-7xl md:gap-6 md:p-4">
       {/* nav lateral — desktop */}
       <nav className="sticky top-4 hidden h-fit w-48 shrink-0 flex-col gap-1 md:flex">
         <div className="mb-2 px-3 text-lg font-bold text-emerald-700">Mercado do Casal</div>

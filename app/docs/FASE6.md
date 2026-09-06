@@ -5,7 +5,7 @@ Validação executada em 06/09/2026 sobre a branch `vite-rewrite`.
 ## Qualidade automatizada
 
 - `npm run lint`: verde, zero warnings.
-- `npm test`: 133 testes verdes em 15 arquivos.
+- `npm test`: 134 testes verdes em 15 arquivos.
 - `npm run build`: TypeScript e build Vite/PWA verdes.
 - Build inclui manifesto, ícones, service worker Workbox e o chunk Quagga sob demanda.
 
@@ -47,7 +47,7 @@ origem usada na migração.
 
 Publicada em <https://uni9aluno.github.io/mercado/> via
 [GitHub Actions](https://github.com/uni9aluno/mercado/actions/runs/34015318339).
-O job executou `npm ci`, lint, 133 testes, build e deploy com sucesso.
+O job executou `npm ci`, lint, os testes, build e deploy com sucesso.
 
 - URL raiz responde 200 com o app novo.
 - `/mercado/MercadoDoCasal.html` responde 200 e redireciona para `/mercado/`.

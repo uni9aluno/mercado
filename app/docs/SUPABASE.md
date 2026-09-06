@@ -1,16 +1,20 @@
-# Ativar o catálogo de códigos de barras (EAN) no Supabase
+# Opcional: catálogo de códigos de barras (EAN) no Supabase
 
-Guia para o dono do app. Ao final, escanear ou digitar um código de barras
-desconhecido no Mercado do Casal vai trazer **nome, marca, peso e foto** do
-produto já preenchidos, em vez de você digitar tudo à mão.
+O preenchimento automático já funciona sem configuração: ao escanear ou digitar
+um código desconhecido, o app consulta a API pública Open Food Facts v3 e traz
+**nome, marca, peso e foto** quando disponíveis. Nenhuma chave é necessária.
+
+Este guia é apenas para quem quer acrescentar um catálogo Supabase compartilhado
+pelo casal. Ele é consultado antes da base pública e pode guardar os cadastros que
+a Open Food Facts ainda não possui.
 
 Tempo: ~5 minutos. Você precisa de uma conta no [Supabase](https://supabase.com)
 (o plano gratuito basta) e de um projeto criado. Não é preciso saber SQL nem ser
 DBA — é só colar o bloco pronto.
 
-Se você **não** fizer nada disto, o app continua funcionando 100%. Só o botão
-"Buscar dados online" fica inativo e o cadastro por código de barras segue
-manual, como sempre foi.
+Se você **não** fizer nada disto, o preenchimento automático pela Open Food Facts
+continua funcionando. Você só deixa de ter o catálogo próprio e a contribuição
+entre aparelhos.
 
 ---
 
@@ -143,20 +147,20 @@ listadas sob `ean_catalog`.
 | **URL do projeto Supabase** | a *Project URL* do passo 3 |
 | **Chave anônima (anon key)** | a chave *`anon` `public`* do passo 3 |
 
-4. Ligue os interruptores (eles só ficam ativos depois que URL e chave estão
-   preenchidas):
+4. O preenchimento automático e a Open Food Facts já vêm ligados. URL e chave
+   são exigidas apenas para a contribuição ao Supabase:
 
 | Interruptor | Ligar? | O que faz |
 |---|---|---|
-| **Ligar busca online** | **Sim** | Ativa a consulta ao seu Supabase ao escanear/digitar um código novo. Sem este, os outros dois não têm efeito. |
-| **Consultar Open Food Facts como reserva** | Recomendado | Se o código não estiver no seu catálogo, o app tenta a [Open Food Facts](https://world.openfoodfacts.org) (base pública mundial, sem chave). É de onde vêm a maioria das fotos. |
-| **Contribuir com meus cadastros** | Recomendado | Quando você cadastra um produto **novo com código de barras**, o app manda o texto (nome, marca, peso) para o seu `ean_catalog`. É assim que a base cresce. Só texto — nunca foto. |
+| **Ligar preenchimento automático por EAN** | **Sim** | Consulta as fontes online automaticamente depois que a busca local não encontra o código. |
+| **Consultar Open Food Facts (sem chave)** | **Sim** | Usa a base pública mundial na API v3; também procura higiene, limpeza e outros itens pelo modo universal. |
+| **Contribuir com meu catálogo Supabase** | Opcional | Quando você cadastra um produto novo com código, envia somente nome, marca e tamanho para a sua tabela. Exige URL e anon key. |
 
 5. Clique em **Salvar**.
-6. Clique em **Testar conexão**. Deve aparecer **"Conexão ok."** em verde.
+6. Clique em **Testar Supabase**. Deve aparecer **"Conexão ok."** em verde.
    - Se aparecer um erro, veja a tabela abaixo.
 
-### "Testar conexão" falhou — o que verificar
+### "Testar Supabase" falhou — o que verificar
 
 | Mensagem | Causa provável | O que fazer |
 |---|---|---|
@@ -175,8 +179,7 @@ Depois de ligado, em qualquer tela que leia código de barras (**Produtos**,
 1. Você escaneia pela câmera ou digita um código.
 2. Se já existe um produto **seu** com esse código → o app usa esse produto,
    nada muda.
-3. Se o código é desconhecido → aparece a opção **"Buscar dados online"**. Ao
-   tocar, o app consulta, **nesta ordem**:
+3. Se o código é desconhecido → o app consulta automaticamente, **nesta ordem**:
    1. o seu **`ean_catalog`** no Supabase;
    2. se não achou e a reserva está ligada, a **Open Food Facts**.
 4. **Achou** → abre o cadastro de produto **já preenchido** com nome, marca,
@@ -199,10 +202,10 @@ ean, name, brand, package_size, package_unit, source: "mercado-do-casal"
 Sem foto, sem categoria, sem nada pessoal. Se a rede falhar, o app ignora em
 silêncio — o produto é salvo no seu aparelho de qualquer jeito.
 
-### Offline / sem configurar
+### Offline / sem configurar o Supabase
 
-- **Sem configurar** o Supabase: o botão "Buscar dados online" não aparece; o
-  cadastro por código é manual. Zero erro.
+- **Sem configurar** o Supabase: a Open Food Facts continua preenchendo os
+  produtos automaticamente, sem chave.
 - **Configurado mas sem internet**: a busca volta "nada encontrado" rápido (há um
   tempo-limite de 6 segundos por etapa) e você segue no manual. Nenhum erro no
   console, nada trava.
@@ -218,8 +221,8 @@ pausado por inatividade pode te pegar se ficar semanas sem abrir o painel; é s�
 reativar.
 
 **E se eu nunca configurar isto?**
-O app funciona 100%. Só "Buscar dados online" fica inativo e todo cadastro por
-código de barras é manual — exatamente como o app sempre funcionou até aqui.
+O app funciona 100% e consulta a Open Food Facts automaticamente. O Supabase só
+acrescenta o catálogo compartilhado do casal.
 
 **Posso desligar depois?**
 Sim. Em **Config → Catálogo de códigos de barras (EAN)**, desmarque os
