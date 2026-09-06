@@ -19,7 +19,7 @@ import { useState } from "react";
 import { repos } from "@/data";
 import { useMaps, usePriceIndex, useProducts, useSetting } from "@/hooks";
 import { gtinValido, normalizarCodigo } from "@/domain/barcode";
-import { DEFAULT_EAN_CONFIG, lookupEan, type EanData } from "@/integrations/eanCatalog";
+import { lookupEan, normalizeEanConfig, type EanData } from "@/integrations/eanCatalog";
 import { fetchImageDataUri } from "@/integrations/image";
 import { Btn, Icon, Input, Modal, ProductPicker } from "@/ui";
 import { fmt } from "@/lib/text";
@@ -80,7 +80,7 @@ export function BarcodeLookup({
   const { priceIndex } = usePriceIndex();
   const { productById } = useMaps();
   const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
-  const eanConfig = eanCatalog ?? DEFAULT_EAN_CONFIG;
+  const eanConfig = normalizeEanConfig(eanCatalog);
   const onlineDisponivel =
     eanConfig.enabled && (eanConfig.off || (!!eanConfig.url.trim() && !!eanConfig.anonKey.trim()));
 

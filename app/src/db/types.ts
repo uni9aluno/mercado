@@ -167,6 +167,8 @@ export interface BackupInfoSettings {
 
 export interface EanCatalogSettings {
   key: "eanCatalog";
+  /** Versão das preferências; ausente nos registros anteriores ao padrão sem chave. */
+  version?: number;
   enabled: boolean;
   url: string;
   anonKey: string;

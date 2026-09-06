@@ -17,6 +17,8 @@
 // ===========================================================================
 
 export interface EanCatalogConfig {
+  /** Versão opcional para migrar preferências salvas por versões antigas do app. */
+  version?: number;
   enabled: boolean;
   url: string;
   anonKey: string;
@@ -27,12 +29,34 @@ export interface EanCatalogConfig {
 
 /** Funciona desde o primeiro uso, sem exigir configuração ou chave. */
 export const DEFAULT_EAN_CONFIG: EanCatalogConfig = {
+  version: 2,
   enabled: true,
   url: "",
   anonKey: "",
   contribute: false,
   off: true,
 };
+
+/**
+ * Converte preferências antigas para o padrão atual. A versão anterior gravava
+ * exatamente tudo desligado quando não havia credenciais do Supabase; esse
+ * registro não pode impedir a nova consulta pública sem chave. Uma escolha
+ * feita na tela atual leva `version: 2` e continua sendo respeitada.
+ */
+export function normalizeEanConfig(cfg?: EanCatalogConfig | null): EanCatalogConfig {
+  if (!cfg) return { ...DEFAULT_EAN_CONFIG };
+  const legadoVazio =
+    (cfg.version ?? 0) < 2 && !cfg.enabled && !cfg.off && !cfg.url?.trim() && !cfg.anonKey?.trim();
+  if (legadoVazio) return { ...DEFAULT_EAN_CONFIG };
+  return {
+    version: 2,
+    enabled: !!cfg.enabled,
+    url: cfg.url ?? "",
+    anonKey: cfg.anonKey ?? "",
+    contribute: !!cfg.contribute,
+    off: !!cfg.off,
+  };
+}
 
 export interface EanData {
   name: string;

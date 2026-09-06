@@ -7,6 +7,8 @@
 - Open Food Facts atualizada da API v2 para a v3 universal (`product_type=all`).
 - Preenchimento automático por EAN agora vem ligado e funciona sem Supabase:
   busca local primeiro e, se o código for novo, consulta a base pública sozinha.
+- Preferências antigas que gravavam o catálogo vazio e desligado são migradas para
+  esse novo padrão; uma desativação feita na tela atual continua respeitada.
 - Supabase ficou opcional, usado apenas como catálogo prioritário compartilhado e
   para contribuição de cadastros. URL + anon key não são necessárias para a OFF.
 - Teste real no navegador com `3017624010701`: Nutella, Ferrero, 400 g e foto

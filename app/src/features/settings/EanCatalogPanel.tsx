@@ -2,17 +2,13 @@ import { useEffect, useState } from "react";
 import { repos } from "@/data";
 import type { EanCatalogSettings } from "@/db/types";
 import { useSetting } from "@/hooks";
-import { testarConexao } from "@/integrations/eanCatalog";
+import { DEFAULT_EAN_CONFIG, normalizeEanConfig, testarConexao } from "@/integrations/eanCatalog";
 import { Btn, Dica, Field } from "@/ui";
 import { inputCls } from "@/ui";
 import { Panel } from "./Panel";
 
 const VAZIO: Omit<EanCatalogSettings, "key"> = {
-  enabled: true,
-  url: "",
-  anonKey: "",
-  contribute: false,
-  off: true,
+  ...DEFAULT_EAN_CONFIG,
 };
 
 function Toggle({
@@ -58,12 +54,14 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
   // hidrata o formulário quando o valor salvo chega/muda
   useEffect(() => {
     if (salvo) {
+      const config = normalizeEanConfig(salvo);
       setForm({
-        enabled: !!salvo.enabled,
-        url: salvo.url ?? "",
-        anonKey: salvo.anonKey ?? "",
-        contribute: !!salvo.contribute,
-        off: !!salvo.off,
+        version: config.version,
+        enabled: config.enabled,
+        url: config.url,
+        anonKey: config.anonKey,
+        contribute: config.contribute,
+        off: config.off,
       });
     }
   }, [salvo]);
@@ -76,6 +74,7 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
   async function salvar() {
     const limpo: EanCatalogSettings = {
       key: "eanCatalog",
+      version: 2,
       url: form.url.trim(),
       anonKey: form.anonKey.trim(),
       enabled: form.enabled,

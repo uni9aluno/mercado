@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { lookupEan, parseQuantidade, type EanCatalogConfig } from "./eanCatalog";
+import {
+  lookupEan,
+  normalizeEanConfig,
+  parseQuantidade,
+  type EanCatalogConfig,
+} from "./eanCatalog";
 
 // Config-base: Supabase configurado. Cada teste ajusta os toggles.
 const base: EanCatalogConfig = {
@@ -128,5 +133,32 @@ describe("parseQuantidade", () => {
     expect(parseQuantidade("")).toBeNull();
     expect(parseQuantidade(undefined)).toBeNull();
     expect(parseQuantidade("sem número")).toBeNull();
+  });
+});
+
+describe("normalizeEanConfig", () => {
+  it("ativa a fonte pública para o registro vazio salvo pela versão anterior", () => {
+    expect(
+      normalizeEanConfig({
+        enabled: false,
+        url: "",
+        anonKey: "",
+        contribute: false,
+        off: false,
+      }),
+    ).toMatchObject({ version: 2, enabled: true, off: true });
+  });
+
+  it("respeita quando o usuário desliga a consulta na versão atual", () => {
+    expect(
+      normalizeEanConfig({
+        version: 2,
+        enabled: false,
+        url: "",
+        anonKey: "",
+        contribute: false,
+        off: false,
+      }),
+    ).toMatchObject({ version: 2, enabled: false, off: false });
   });
 });
