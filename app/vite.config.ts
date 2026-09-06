@@ -19,6 +19,7 @@ export default defineConfig(({ command }) => ({
       manifest: {
         name: "Mercado do Casal",
         short_name: "Mercado",
+        lang: "pt-BR",
         description: "Lista de compras e controle de gastos do casal",
         start_url: "/mercado/",
         scope: "/mercado/",

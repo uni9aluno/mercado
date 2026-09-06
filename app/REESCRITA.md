@@ -93,12 +93,19 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
   portadas por agentes em paralelo (escopo isolado por diretório).
 - **Fase 5 — Features novas.** ✅ Modo Compra (`features/buy-mode/`) e o leitor de
   código de barras (`features/barcode/`) + integração do catálogo EAN online.
-- **Fase 6 — Paridade, migração real, publicação.** Checklist tela a tela, testar
-  a migração num perfil de navegador com dados v4 reais, publicar na mesma URL.
+- **Fase 6 — Paridade, migração real, publicação.** ✅ Checklist tela a tela,
+  migração num perfil de navegador com dados v4 reais e publicação na mesma URL.
 
 ## Onde estamos
 
-**Fases 0-5 completas e commitadas na branch `vite-rewrite`.**
+**Fases 0-6 completas. A reescrita está publicada em `main`.**
+
+- Migração real v4→v5 validada na mesma origem, preservando dados e relações.
+- Busca global restaurada (`Ctrl+K`/`Cmd+K`, desktop e mobile).
+- Compatibilidade para instalações antigas garantida por
+  `public/MercadoDoCasal.html`, que redireciona para a raiz nova.
+- Pipeline GitHub Pages verde e URL pública verificada. Relatório completo em
+  [`docs/FASE6.md`](docs/FASE6.md).
 
 - 133 testes Vitest verdes, 15 arquivos (migração v4→v5, seed + corrida do
   StrictMode, motor de preços, previsão, comparador, backup, barcode,
@@ -130,9 +137,7 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 - `PurchaseForm` edita a compra por "delete + recreate", o que troca o uid da
   compra. Funciona, mas seria mais limpo com `update`.
 
-**Pendente de você:**
-- Autorizar o `git push --force` para `uni9aluno/mercado` (só necessário na
-  Fase 6 — consolidar `X:\Mercado` como o repositório).
+**Pendente de você (opcional):**
 - **Quando quiser ativar o catálogo de EAN:** criar a tabela `ean_catalog` no seu
   Supabase (um bloco SQL para colar — cria a tabela e as policies de RLS) e colar
   Project URL + anon key na seção "Catálogo de códigos de barras (EAN)" da tela

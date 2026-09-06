@@ -1,4 +1,4 @@
-# Fase 6 — paridade, migração e publicação
+# Fase 6 — paridade, migração e publicação ✅
 
 Validação executada em 06/09/2026 sobre a branch `vite-rewrite`.
 
@@ -45,10 +45,11 @@ origem usada na migração.
 
 ## Publicação
 
-O workflow `.github/workflows/deploy.yml` valida e publica `app/dist` quando `main`
-recebe push. Após a execução remota, conferir:
+Publicada em <https://uni9aluno.github.io/mercado/> via
+[GitHub Actions](https://github.com/uni9aluno/mercado/actions/runs/34015318339).
+O job executou `npm ci`, lint, 133 testes, build e deploy com sucesso.
 
-- URL raiz responde com o app novo.
-- `/mercado/MercadoDoCasal.html` redireciona para `/mercado/`.
-- `manifest.webmanifest` e `sw.js` respondem 200.
+- URL raiz responde 200 com o app novo.
+- `/mercado/MercadoDoCasal.html` responde 200 e redireciona para `/mercado/`.
+- `manifest.webmanifest` e `sw.js` respondem 200 com os tipos MIME corretos.
 - O workflow GitHub Pages terminou verde.
