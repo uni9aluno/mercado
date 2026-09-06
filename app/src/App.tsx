@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
+import { db } from "@/db/schema";
+import { ensureListForOrphans, seedIfEmpty } from "@/db/seed";
 
-// Fase 0 — andaime. Esta tela só existe para provar o pipeline Vite -> Actions -> Pages.
-// Nas fases seguintes o App.tsx vira o roteador de verdade (troca de aba, nav mobile/desktop).
+// Fase 0-3 — andaime. Vira o roteador de verdade na Fase 4.
 export default function App() {
-  const [dexieOk, setDexieOk] = useState<string>("checando…");
+  const [pronto, setPronto] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [contagem, setContagem] = useState<{ produtos: number; listas: number } | null>(null);
 
   useEffect(() => {
-    // Toca o Dexie para confirmar que a dependência resolve no build.
-    import("dexie")
-      .then(({ default: Dexie }) => setDexieOk(`Dexie ${Dexie.semVer} carregado`))
-      .catch((e) => setDexieOk(`falha: ${String(e)}`));
+    (async () => {
+      try {
+        await db.open();
+        await seedIfEmpty();
+        await ensureListForOrphans();
+        setContagem({
+          produtos: await db.products.count(),
+          listas: await db.shoppingLists.count(),
+        });
+        setPronto(true);
+      } catch (e) {
+        setErro(String(e));
+      }
+    })();
   }, []);
 
   return (
@@ -17,11 +30,17 @@ export default function App() {
       <div className="text-5xl">🛒</div>
       <h1 className="text-2xl font-bold text-emerald-700">Mercado do Casal</h1>
       <p className="text-slate-600">
-        Andaime da reescrita em Vite + React + TypeScript. Se você está vendo isto publicado, o
-        pipeline de build e deploy está funcionando.
+        Reescrita em Vite + React + TypeScript. O banco (schema v{db.verno}) abriu e o seed rodou.
       </p>
-      <div className="rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">{dexieOk}</div>
-      <p className="text-xs text-slate-400">Fase 0 · {new Date().toISOString().slice(0, 10)}</p>
+      {erro && (
+        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{erro}</div>
+      )}
+      {pronto && contagem && (
+        <div className="rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-800">
+          {contagem.produtos} produtos · {contagem.listas} lista(s)
+        </div>
+      )}
+      <p className="text-xs text-slate-400">Andaime · telas a partir da Fase 4</p>
     </div>
   );
 }
