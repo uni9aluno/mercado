@@ -76,6 +76,24 @@ describe("seedIfEmpty", () => {
     expect(await db.products.count()).toBe(SEED_PRODUCTS.length);
     expect(await db.shoppingLists.count()).toBe(1);
   });
+
+  it("não duplica sob chamadas CONCORRENTES (corrida do StrictMode)", async () => {
+    // as duas rodam antes de qualquer escrita — o cenário que dobrava o seed
+    await Promise.all([seedIfEmpty(), seedIfEmpty(), seedIfEmpty()]);
+    expect(await db.categories.count()).toBe(SEED_CATEGORIES.length);
+    expect(await db.stores.count()).toBe(SEED_STORES.length);
+    expect(await db.products.count()).toBe(SEED_PRODUCTS.length);
+    expect(await db.shoppingLists.count()).toBe(1);
+  });
+
+  it("boot concorrente (seed + ensureListForOrphans em paralelo) não cria lista extra", async () => {
+    await Promise.all([
+      seedIfEmpty().then(ensureListForOrphans),
+      seedIfEmpty().then(ensureListForOrphans),
+    ]);
+    expect(await db.products.count()).toBe(SEED_PRODUCTS.length);
+    expect(await db.shoppingLists.count()).toBe(1);
+  });
 });
 
 describe("ensureListForOrphans", () => {

@@ -170,14 +170,28 @@ function uuid(): string {
   return crypto.randomUUID();
 }
 
+// Trava de processo: o StrictMode do React chama o efeito de boot 2x em dev,
+// e as duas chamadas podem ler `count() === 0` antes de qualquer escrita. O
+// guard dentro da transação (abaixo) já cobre o caso, mas evitar a 2ª
+// transação inteira é mais barato.
+let seedEmAndamento: Promise<void> | null = null;
+
 /**
- * Popula o banco só se estiver vazio (guard: `products.count() > 0`).
- * Mesma ordem do original: categories → stores → products → purchases →
- * purchaseItems → settings → 1 lista ativa.
+ * Popula o banco só se estiver vazio. O guard (`products.count() > 0`) roda
+ * DENTRO da transação `rw` — o Dexie serializa transações sobre as mesmas
+ * tabelas, então uma 2ª chamada concorrente vê o seed da 1ª e sai.
+ * Ordem: categories → stores → products → purchases → purchaseItems →
+ * settings → 1 lista ativa.
  */
 export async function seedIfEmpty(): Promise<void> {
-  if ((await db.products.count()) > 0) return;
+  if (seedEmAndamento) return seedEmAndamento;
+  seedEmAndamento = seedInterno().finally(() => {
+    seedEmAndamento = null;
+  });
+  return seedEmAndamento;
+}
 
+async function seedInterno(): Promise<void> {
   await db.transaction(
     "rw",
     [
@@ -190,6 +204,9 @@ export async function seedIfEmpty(): Promise<void> {
       db.settings,
     ],
     async () => {
+      // guard DENTRO da transação — cobre a corrida
+      if ((await db.products.count()) > 0) return;
+
       // 1. categorias
       const mapaCat: Record<string, string> = {};
       await db.categories.bulkAdd(
@@ -288,28 +305,33 @@ export async function seedIfEmpty(): Promise<void> {
 /**
  * Rede de segurança: adota qualquer shoppingItem com listId nulo ou apontando
  * para lista inexistente. Roda no boot e ao fim de todo restore.
+ * Tudo numa transação `rw` — o guard (achar órfão) e a escrita ficam atômicos,
+ * então duas chamadas concorrentes (StrictMode) não criam duas listas "Minha
+ * lista".
  */
 export async function ensureListForOrphans(): Promise<void> {
-  const listas = await db.shoppingLists.toArray();
-  const uids = new Set(listas.map((q) => q.uid));
-  const orfaos = await db.shoppingItems
-    .filter((q) => q.listId == null || !uids.has(q.listId))
-    .toArray();
-  if (!orfaos.length) return;
+  await db.transaction("rw", [db.shoppingLists, db.shoppingItems], async () => {
+    const listas = await db.shoppingLists.toArray();
+    const uids = new Set(listas.map((q) => q.uid));
+    const orfaos = await db.shoppingItems
+      .filter((q) => q.listId == null || !uids.has(q.listId))
+      .toArray();
+    if (!orfaos.length) return;
 
-  const alvo = listas.find((q) => q.active) || listas[0];
-  let listUid: string;
-  if (alvo) {
-    listUid = alvo.uid;
-  } else {
-    listUid = uuid();
-    await db.shoppingLists.add({
-      uid: listUid,
-      name: "Minha lista",
-      storeId: null,
-      active: 1,
-      createdAt: Date.now(),
-    });
-  }
-  await db.shoppingItems.bulkPut(orfaos.map((q) => ({ ...q, listId: listUid })));
+    const alvo = listas.find((q) => q.active) || listas[0];
+    let listUid: string;
+    if (alvo) {
+      listUid = alvo.uid;
+    } else {
+      listUid = uuid();
+      await db.shoppingLists.add({
+        uid: listUid,
+        name: "Minha lista",
+        storeId: null,
+        active: 1,
+        createdAt: Date.now(),
+      });
+    }
+    await db.shoppingItems.bulkPut(orfaos.map((q) => ({ ...q, listId: listUid })));
+  });
 }

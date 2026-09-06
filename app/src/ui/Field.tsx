@@ -33,19 +33,27 @@ export function Select({
   options: Option[];
   placeholder?: string;
 } & SelectHTMLAttributes<HTMLSelectElement>) {
+  // dedup por valor — protege contra listas com repetição (ex.: cache stale do
+  // useLiveQuery durante um reseed) que gerariam key duplicada no React.
+  const vistos = new Set<string>();
+  const itens: { value: string; text: string }[] = [];
+  for (const o of options) {
+    const value = typeof o === "string" ? o : o.value;
+    const text = typeof o === "string" ? o : o.label;
+    if (vistos.has(value)) continue;
+    vistos.add(value);
+    itens.push({ value, text });
+  }
+
   return (
     <Field label={label}>
       <select className={inputCls + " bg-white"} {...rest}>
         {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => {
-          const value = typeof o === "string" ? o : o.value;
-          const text = typeof o === "string" ? o : o.label;
-          return (
-            <option key={value} value={value}>
-              {text}
-            </option>
-          );
-        })}
+        {itens.map(({ value, text }) => (
+          <option key={value} value={value}>
+            {text}
+          </option>
+        ))}
       </select>
     </Field>
   );

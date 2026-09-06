@@ -110,12 +110,23 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 **Pendente de você:**
 - Autorizar o `git push --force` para `uni9aluno/mercado` (só necessário na
   Fase 6 — consolidar `X:\Mercado` como o repositório).
-- **Quando quiser ativar o catálogo de EAN:** criar a tabela no seu Supabase
-  (passo a passo em `docs/SUPABASE.md`) e colar URL + anon key na tela Config.
-  Sem isso o app funciona 100%, só o "Buscar dados online" fica inativo.
+- **Quando quiser ativar o catálogo de EAN:** criar a tabela `ean_catalog` no seu
+  Supabase (um bloco SQL para colar — cria a tabela e as policies de RLS) e colar
+  Project URL + anon key na seção "Catálogo de códigos de barras (EAN)" da tela
+  Config. Passo a passo completo, incluindo os três interruptores (busca online,
+  Open Food Facts como reserva, contribuir com os cadastros) e o diagnóstico do
+  "Testar conexão", em **[`docs/SUPABASE.md`](docs/SUPABASE.md)**. Sem isso o app
+  funciona 100%, só o "Buscar dados online" fica inativo.
 
 ## O que NÃO precisa de você
 
-- Nenhum login/OAuth. O catálogo EAN usa REST puro com a anon key (pública).
+- Nenhum login/OAuth. O catálogo EAN usa REST puro do PostgREST com a anon key
+  (chave *pública*, feita para ficar em código de cliente). A base é
+  compartilhada e aberta de propósito; o risco assumido — alguém inserir lixo —
+  fica contido por não haver policy de `DELETE` (ninguém apaga dados dos outros)
+  e pelo campo `source`, que marca a origem de cada linha. Detalhes e mitigação
+  em `docs/SUPABASE.md`.
+- Nenhuma foto sai do aparelho. A contribuição para o catálogo é só texto (nome,
+  marca, peso); as fotos vêm da Open Food Facts e ficam apenas no IndexedDB.
 - Nenhum export/import manual de dados na migração — ela roda sozinha na
   primeira vez que o app novo abrir, no mesmo endereço.
