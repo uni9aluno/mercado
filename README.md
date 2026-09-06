@@ -1,8 +1,8 @@
 # Mercado do Casal
 
-Um app de lista de compras e controle de gastos para casal, pensado para ser simples, rodar **offline** e não depender de servidor nenhum. É um único arquivo HTML — abre em qualquer navegador, no computador ou no celular, e guarda tudo no próprio aparelho.
+Um app de lista de compras e controle de gastos para casal, pensado para ser simples, funcionar **offline** e guardar os dados no próprio aparelho. A versão atual é uma PWA em React + TypeScript, publicada automaticamente pelo GitHub Actions.
 
-**No ar:** <https://uni9aluno.github.io/mercado/> — abrir por aí (ou instalar como app, ver abaixo) habilita a leitura de código de barras pela câmera. O arquivo local `MercadoDoCasal.html` também funciona sozinho, só sem câmera.
+**No ar:** <https://uni9aluno.github.io/mercado/> — abra por esse endereço ou instale como aplicativo para usar também a câmera e o modo offline.
 
 ## Para que serve
 
@@ -24,6 +24,8 @@ A lista de compras em si — o coração do app. Dá para ter **várias listas a
 
 Cada item da lista mostra o preço mais recente, o preço-alvo, uma cor indicando se está dentro do esperado e **quando ele foi comprado pela última vez, por quanto** — sem precisar ir ao Histórico. Dá para marcar como comprado, ajustar quantidade ou remover, e a tela soma pendente/comprado/total automaticamente. Se comprar tudo pelo preço-alvo desse mês economizaria dinheiro, um banner mostra quanto.
 
+O botão **Iniciar compra** abre o Modo Compra: primeiro mostra uma conferência da lista e do total estimado; durante a ida ao mercado, cada item pode ser marcado e ter quantidade/preço corrigidos. Ao finalizar, o app registra a compra e mantém os itens na lista como “Comprado”. Uma segunda ida na mesma lista mostra somente o que ainda está pendente.
+
 Com a lista grande, há **busca** por nome e **filtros** por categoria, prioridade e "só acima do preço-alvo", além de escolher a ordenação. Itens que não podem ser esquecidos podem ser **fixados no topo**. Dá também para **deslizar um item**: para a direita marca como comprado, para a esquerda exclui — os botões de sempre continuam funcionando do mesmo jeito, é só um atalho a mais.
 
 Uma lista que você não vai mais usar por enquanto (por exemplo, fora de temporada) pode ser **desativada** em vez de excluída: ela some do painel principal e para de contar nos totais, mas fica guardada com todo o conteúdo, pronta para ser reativada depois.
@@ -36,7 +38,7 @@ Onde uma compra de verdade é lançada: data, mercado, forma de pagamento, quem 
 ### 🏷️ Produtos
 O catálogo de tudo que a casa costuma comprar: nome, marca, categoria, unidade, tamanho de embalagem, preço padrão e preço-alvo, e a frequência esperada de recompra (a cada quantos dias, em média, o produto costuma acabar). É esse cadastro que alimenta as listas de compras e o comparador de preços. Há também um campo **código de barras** e um **"Grupo comparável"** (para agrupar embalagens equivalentes no Comparador). O botão **"Consultar código"** procura um EAN no catálogo deste aparelho — se não achar, oferece cadastrar um produto novo ou vincular o código a um já existente.
 
-O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** só funciona quando o app é aberto por um endereço `https://` ou instalado como aplicativo — abrindo o arquivo direto (`file://`), o navegador não libera a câmera, e a própria tela avisa isso. Ver **[INSTALAR-PWA.md](INSTALAR-PWA.md)** para instalar o app e habilitar a câmera.
+O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** funciona no endereço HTTPS ou no PWA instalado. Opcionalmente, a Config permite ligar um catálogo EAN compartilhado no Supabase: a consulta tenta esse catálogo primeiro e usa a Open Food Facts como reserva; nome, marca, peso e foto podem preencher o cadastro. A foto fica apenas no aparelho. Ver **[app/docs/SUPABASE.md](app/docs/SUPABASE.md)** para ativar.
 
 ### 📊 Comparar
 A tela onde o histórico vira decisão de onde comprar. Tudo é calculado só com o que já foi registrado neste aparelho — nunca consulta preço na internet.
@@ -70,23 +72,31 @@ O backup agora carrega uma verificação interna: se o arquivo chegar corrompido
 
 ## Como os dados funcionam
 
-Tudo fica guardado no próprio navegador (tecnicamente, num banco local chamado IndexedDB) — não sai do aparelho, não tem login, não tem nuvem. Isso quer dizer duas coisas na prática:
+As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`) — não há login nem sincronização dos dados do casal. A única integração opcional é o catálogo EAN: quando ativado, consulta e contribuição enviam apenas dados textuais de produto ao Supabase/Open Food Facts.
 
-- **Funciona sem internet.** Pode abrir o arquivo direto (`file://`) e usar normalmente.
+- **Funciona sem internet.** Depois da primeira abertura pelo endereço publicado, o PWA mantém o build em cache.
 - **Cada aparelho tem sua própria cópia.** Para levar os dados do celular para o computador (ou vice-versa), é preciso usar o **backup**: baixar o `.json` em um aparelho e restaurar no outro, em Config.
 
 O ponto delicado é justamente esse: **se você limpar os dados do navegador sem ter um backup, acabou** — não existe cópia em servidor nenhum para recuperar. Por isso o Início avisa quando o último backup já tem uma semana, e a Config tem o botão de compartilhar, que é o jeito mais rápido de jogar o arquivo no Drive do celular.
 
 ## Como abrir
 
-Basta abrir o arquivo `MercadoDoCasal.html` em qualquer navegador — dando duplo clique nele ou arrastando para uma aba. Não precisa instalar nada, não precisa de internet depois da primeira vez.
+Use <https://uni9aluno.github.io/mercado/>. Para desenvolvimento local:
+
+```powershell
+cd X:\Mercado\app
+npm ci
+npm run dev
+```
+
+O Vite mostra o endereço local. Os comandos `npm run lint`, `npm test` e `npm run build` fazem a validação completa.
 
 ### Instalar como aplicativo (PWA)
 
-Se o app for servido por um endereço **`https://`**, ele pode ser **instalado** no celular ou no PC: ganha ícone próprio, abre em tela cheia sem a barra do navegador, continua funcionando offline e — o principal — **passa a poder ler código de barras pela câmera**. Os arquivos `manifest.json` e `sw.js` precisam estar na mesma pasta do HTML. Quando uma versão nova é publicada, aparece uma barra avisando, com um botão de atualizar.
+Pelo endereço **`https://`**, o app pode ser instalado no celular ou no PC: ganha ícone próprio, abre em tela cheia, continua funcionando offline e pode ler código de barras pela câmera. O service worker e o manifesto são gerados pelo build.
 
 O passo a passo completo (publicar em HTTPS de graça, instalar no Android, instalar no PC) está em **[INSTALAR-PWA.md](INSTALAR-PWA.md)**.
 
 ---
 
-*Para quem for mexer no código: veja [CLAUDE.md](CLAUDE.md) (arquitetura e regras de edição), [HANDOFF.md](HANDOFF.md) (registro cronológico das entregas), [STATUS_ONDA3.md](STATUS_ONDA3.md) (corte final da Onda 3) e [INSTALAR-PWA.md](INSTALAR-PWA.md) (publicar em HTTPS e instalar como PWA).*
+*Para quem for mexer no código: veja [app/REESCRITA.md](app/REESCRITA.md) (arquitetura e estado), [app/docs/FASE6.md](app/docs/FASE6.md) (validação da migração/publicação), [HANDOFF.md](HANDOFF.md) (histórico) e [INSTALAR-PWA.md](INSTALAR-PWA.md) (instalação e deploy).*

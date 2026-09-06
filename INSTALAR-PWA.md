@@ -1,115 +1,75 @@
-# Instalar o Mercado do Casal como aplicativo (PWA)
+# Instalar e publicar o Mercado do Casal
 
-## O app está publicado
+## Aplicativo publicado
 
 **<https://uni9aluno.github.io/mercado/>**
 
-Repositório: <https://github.com/uni9aluno/mercado> (público, conta `uni9aluno`).
-GitHub Pages serve a pasta `main` / raiz, com HTTPS.
+O app é uma PWA. Depois da primeira abertura, o build fica disponível offline. Os
+dados do casal continuam somente no IndexedDB de cada navegador; para levá-los a
+outro aparelho, use o backup JSON da tela Config.
 
-Abrir o `MercadoDoCasal.html` direto do gerenciador de arquivos (`file://`) continua
-funcionando para quase tudo, **menos a câmera** — navegadores bloqueiam o acesso à
-câmera em `file://`. Pelo endereço HTTPS acima, o leitor de código de barras pela
-câmera funciona.
+Quem já usava a versão antiga na mesma URL não precisa exportar/importar nada: na
+primeira abertura da versão nova, o banco `MercadoDB` é migrado automaticamente da
+v4 para a v5. O caminho antigo `MercadoDoCasal.html` permanece como redirecionamento
+de compatibilidade para instalações existentes.
 
-| | `file://` (arquivo local) | pelo endereço HTTPS / PWA instalado |
-|---|---|---|
-| Lista, gastos, comparador, backup | ✅ | ✅ |
-| Funciona offline | ✅ | ✅ (depois da 1ª abertura) |
+| Recurso | Navegador HTTPS | PWA instalada |
+|---|---:|---:|
+| Lista, gastos, comparador e backup | ✅ | ✅ |
+| Uso offline após a primeira abertura | ✅ | ✅ |
 | Digitar código de barras | ✅ | ✅ |
-| **Ler código pela câmera** | ❌ | ✅ |
-| Ícone próprio / tela cheia | ❌ | ✅ |
-
-Os dados ficam **só no aparelho** (IndexedDB) nos dois casos. Não há conta nem nuvem.
-O backup JSON é a única forma de levar os dados para outro aparelho.
-
----
+| Ler código pela câmera | ✅ | ✅ |
+| Ícone próprio e tela cheia | — | ✅ |
 
 ## Instalar no Android (Chrome)
 
-1. Abrir **<https://uni9aluno.github.io/mercado/>** no Chrome.
-2. Usar o app por alguns segundos (o Chrome espera uma interação antes de oferecer a
-   instalação).
-3. Menu **⋮** → **Instalar aplicativo** (ou **Adicionar à tela inicial** → **Instalar**).
-4. Confirmar. O ícone do "Mercado" aparece na tela inicial e na gaveta de apps.
-5. Abrir pelo ícone — abre em tela cheia, sem a barra do Chrome.
+1. Abra <https://uni9aluno.github.io/mercado/> no Chrome.
+2. Use o menu **⋮ → Instalar aplicativo** (ou **Adicionar à tela inicial → Instalar**).
+3. Abra pelo ícone criado.
+4. Ao usar **Escanear com a câmera** pela primeira vez, permita o acesso à câmera.
 
-### Permitir a câmera
-
-Na primeira vez que tocar em **Escanear com a câmera** (tela Produtos → "Consultar
-código", ou no cadastro de um produto), o Android pede permissão. Toque em **Permitir**.
-Se negar sem querer: **Configurações do Android → Aplicativos → Mercado → Permissões →
-Câmera → Permitir**.
-
-Se a câmera ainda assim não abrir, a própria tela de "Consultar código" passa a
-explicar o motivo em vez de esconder o botão.
-
----
+Se a permissão foi negada: **Configurações do Android → Aplicativos → Mercado →
+Permissões → Câmera → Permitir**.
 
 ## Instalar no PC (Chrome ou Edge)
 
-1. Abrir <https://uni9aluno.github.io/mercado/>.
-2. Na barra de endereço, à direita, o ícone de **instalar** (um monitor com seta para
-   baixo). Clicar.
-   - Alternativa: menu **⋮** → **Instalar Mercado do Casal…**
-3. O app abre em janela própria, com ícone no menu Iniciar / Launchpad.
-
----
+1. Abra <https://uni9aluno.github.io/mercado/>.
+2. Clique no ícone de instalação à direita da barra de endereço.
+3. Confirme **Instalar**.
 
 ## Publicar uma atualização
 
-`X:\Mercado` é um repositório git local (sem remote — o desenvolvimento fica só aqui).
-O **repositório publicado** é o `uni9aluno/mercado`, separado, com só os arquivos do
-site. O clone dele já está em **`C:\Users\Heimdall\mercado-pub`** (se sumir, refazer
-com `git -c http.sslBackend=schannel clone https://github.com/uni9aluno/mercado.git`).
+O repositório é <https://github.com/uni9aluno/mercado>. Um push para `main` dispara
+`.github/workflows/deploy.yml`, que executa `npm ci`, lint, os testes, o build Vite
+e publica `app/dist` no GitHub Pages.
 
-A cada atualização, do Git Bash:
+Antes de enviar:
 
-```bash
-cd /x/Mercado && git commit -am "..."                          # 1. versionar no projeto
-cp MercadoDoCasal.html manifest.json sw.js ~/mercado-pub/      # 2. copiar o que mudou
-cd ~/mercado-pub && git commit -am "Atualizar app" && git push # 3. publicar
+```powershell
+cd X:\Mercado\app
+npm run lint
+npm test
+npm run build
 ```
 
-(No Git Bash, `~` é `C:\Users\Heimdall` e `/x/Mercado` é `X:\Mercado`.)
+Depois, versionar e publicar a partir de `X:\Mercado`:
 
-> O `-c http.sslBackend=schannel` é obrigatório nesta rede (o proxy usa um certificado
-> próprio que o OpenSSL do Git recusa). Já está no `git config --global`, então um
-> `git push` simples também funciona — o `-c` explícito é só um lembrete.
+```powershell
+git add -A
+git commit -m "Descrição da atualização"
+git push origin main
+```
 
-Em ~1 minuto o GitHub Pages reconstrói. O service worker é *network-first*: quem está
-online pega a versão nova no próximo acesso; quem está offline continua com a última
-que baixou. Ao subir uma atualização, o app mostra uma barra "atualizar" para quem já
-tinha aberto antes.
+Nesta rede, se o certificado do proxy impedir o push, use:
 
-> **Atenção ao `sw.js`:** ao trocar o nome do arquivo do app ou mexer no que é
-> cacheado, subir a versão do `CACHE` (`mercado-do-casal-vN`) para forçar a limpeza do
-> cache antigo nos aparelhos. Foi feito na v1→v2 (renomeação do arquivo).
+```powershell
+git -c http.sslBackend=schannel push origin main
+```
 
-### Só o necessário para o site
+O catálogo EAN online é opcional e não faz parte do deploy. Para configurá-lo, veja
+[app/docs/SUPABASE.md](app/docs/SUPABASE.md).
 
-O repositório publicado tem apenas: `MercadoDoCasal.html`, `index.html` (redireciona a
-raiz para o app), `manifest.json`, `sw.js`, `.gitattributes` (força LF — o HTML
-minificado depende disso) e um `README.md` curto. Os documentos internos de
-desenvolvimento (`CLAUDE.md`, `HANDOFF.md`, `AGENTES.md`, `melhorias.md`,
-`STATUS_ONDA3.md`) **não** vão para lá.
+## Observação sobre o domínio da conta
 
----
-
-## Nota sobre o domínio da conta
-
-A conta `uni9aluno` tinha um domínio customizado `gabriellunaro.me` configurado num
-repo `uni9aluno.github.io` (arquivo `CNAME`, de 2024). Esse domínio **expirou** e
-passou a redirecionar todos os GitHub Pages da conta para um host inexistente. O
-`CNAME` foi removido para destravar `https://uni9aluno.github.io/`. Se um dia esse
-domínio voltar a ser usado, recolocar o `CNAME` **só** no repo que deve responder por
-ele — não deixá-lo valendo para a conta inteira.
-
----
-
-## Alternativa sem GitHub: Netlify Drop
-
-Se preferir não usar o GitHub Pages: <https://app.netlify.com/drop> — arrastar a pasta
-com `MercadoDoCasal.html`, `index.html`, `manifest.json` e `sw.js`. O site sobe na hora
-num endereço `https://ALGO.netlify.app`. Criar conta gratuita depois para manter o
-endereço e poder atualizar.
+O domínio antigo `gabriellunaro.me` expirou e não deve ser configurado como `CNAME`
+global da conta `uni9aluno`, pois isso redireciona indevidamente os GitHub Pages.

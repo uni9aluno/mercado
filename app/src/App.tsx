@@ -3,12 +3,14 @@ import { db } from "@/db/schema";
 import { ensureListForOrphans, seedIfEmpty } from "@/db/seed";
 import { MOBILE_TABS, ROUTES } from "./routes";
 import { Boundary, Icon, Modal, UndoBar } from "@/ui";
+import { GlobalSearch } from "@/features/search/GlobalSearch";
 
 export default function App() {
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [tab, setTab] = useState("dashboard");
   const [maisAberto, setMaisAberto] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -21,6 +23,17 @@ export default function App() {
         setErro(String(e));
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const openSearch = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setBuscaAberta(true);
+      }
+    };
+    window.addEventListener("keydown", openSearch);
+    return () => window.removeEventListener("keydown", openSearch);
   }, []);
 
   if (erro) {
@@ -58,6 +71,14 @@ export default function App() {
       {/* nav lateral — desktop */}
       <nav className="sticky top-4 hidden h-fit w-48 shrink-0 flex-col gap-1 md:flex">
         <div className="mb-2 px-3 text-lg font-bold text-emerald-700">Mercado do Casal</div>
+        <button
+          onClick={() => setBuscaAberta(true)}
+          className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+        >
+          <Icon.search size={18} />
+          Buscar
+          <span className="flex-1 text-right text-xs font-normal text-gray-400">Ctrl+K</span>
+        </button>
         {ROUTES.map((r) => {
           const Ico = Icon[r.icon];
           const on = r.id === tab;
@@ -117,6 +138,16 @@ export default function App() {
 
       <Modal open={maisAberto} onClose={() => setMaisAberto(false)} title="Mais">
         <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => {
+              setMaisAberto(false);
+              setBuscaAberta(true);
+            }}
+            className="flex flex-col items-center gap-1 rounded-xl border border-gray-200 p-4 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <Icon.search size={22} />
+            Buscar
+          </button>
           {maisRoutes.map((r) => {
             const Ico = Icon[r.icon];
             return (
@@ -132,6 +163,8 @@ export default function App() {
           })}
         </div>
       </Modal>
+
+      {buscaAberta && <GlobalSearch onClose={() => setBuscaAberta(false)} onNavigate={ir} />}
 
       <UndoBar />
     </div>

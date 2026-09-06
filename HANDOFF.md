@@ -1,5 +1,19 @@
 # Handoff — Ondas 1 e 2 do plano de evolução
 
+## Reescrita Vite — Fase 6 (06/09/2026)
+
+- Migração real `MercadoDB` v4→v5 validada no navegador, na mesma origem, preservando
+  seed, histórico, backups, configurações e uma lista de controle criada pela UI.
+- Checklist das oito telas e dos layouts desktop/mobile concluído sem erros de console.
+- Busca global portada (`Ctrl+K`/`Cmd+K`, botão desktop e menu móvel), cobrindo
+  produtos, itens, compras, listas e mercados.
+- Adicionado `app/public/MercadoDoCasal.html`, redirecionamento de compatibilidade
+  para PWAs antigos que ainda abrem pelo nome do arquivo legado.
+- Documentação de uso, instalação e publicação atualizada para o build Vite/Actions.
+- Relatório reproduzível em `app/docs/FASE6.md`.
+
+---
+
 > **Os arquivos `MercadoDoCasal-corrigido.*.bak.html` citados abaixo não existem mais.**
 > Em 31/08/2026 o projeto virou repositório git e os 7 backups foram removidos — cada
 > "Backup do estado anterior: …" nas seções abaixo corresponde hoje a um ponto no
