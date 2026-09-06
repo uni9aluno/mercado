@@ -13,6 +13,10 @@
   para contribuição de cadastros. URL + anon key não são necessárias para a OFF.
 - Teste real no navegador com `3017624010701`: Nutella, Ferrero, 400 g e foto
   preenchidos automaticamente; o produto de teste não foi salvo.
+- Corrigido falso negativo visual durante a consulta: a tela agora mantém
+  “Buscando dados…” até a resposta online, tolera 10 s em rede móvel e só então
+  oferece nova tentativa. Validado também com `7898215151708` (Leite Integral
+  Piracanjuba, 1 L).
 
 ---
 

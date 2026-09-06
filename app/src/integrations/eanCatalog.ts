@@ -70,10 +70,12 @@ export interface EanData {
   source: "supabase" | "off";
 }
 
-const TIMEOUT_MS = 6000;
+// Redes móveis podem levar alguns segundos até resolver o domínio e responder.
+// Dez segundos ainda evita uma espera indefinida sem criar falsos negativos cedo demais.
+const TIMEOUT_MS = 10000;
 const OFF_BASE = "https://world.openfoodfacts.org/api/v3/product/";
 
-/** fetch com AbortController de 6s; devolve `null` em qualquer falha/timeout. */
+/** fetch com AbortController de 10s; devolve `null` em qualquer falha/timeout. */
 async function fetchComTimeout(url: string, init?: RequestInit): Promise<Response | null> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);

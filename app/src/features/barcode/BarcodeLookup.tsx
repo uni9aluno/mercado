@@ -93,22 +93,24 @@ export function BarcodeLookup({
   const [online, setOnline] = useState(false);
   const [avisoOnline, setAvisoOnline] = useState("");
 
-  const buscarOnline = async (ean: string) => {
-    if (!onlineDisponivel) return;
+  const buscarOnline = async (ean: string): Promise<boolean> => {
+    if (!onlineDisponivel) return false;
     setOnline(true);
     setAvisoOnline("");
     try {
       const dados = await lookupEan(ean, eanConfig);
       if (!dados) {
         setAvisoOnline(
-          "Nada encontrado no catálogo online para este código. Cadastre manualmente.",
+          "Não foi possível confirmar os dados online. A conexão pode ter falhado ou o produto ainda não estar na base.",
         );
-        return;
+        return false;
       }
       const image = dados.imageUrl ? await fetchImageDataUri(dados.imageUrl) : null;
       onCreate(prefillDeEan(ean, dados, image));
+      return true;
     } catch {
       setAvisoOnline("Não foi possível consultar o catálogo online agora.");
+      return false;
     } finally {
       setOnline(false);
     }
@@ -119,13 +121,20 @@ export function BarcodeLookup({
     if (!w) return;
     setCodigo(w);
     setConsultando(true);
+    setBuscou(false);
     setLinking(false);
     setAvisoOnline("");
     try {
       const encontrados = await repos.products.byBarcode(w);
       setAchados(encontrados);
-      setBuscou(true);
-      if (!encontrados.length && onlineDisponivel) await buscarOnline(w);
+      if (encontrados.length) {
+        setBuscou(true);
+      } else if (onlineDisponivel) {
+        const encontradoOnline = await buscarOnline(w);
+        if (!encontradoOnline) setBuscou(true);
+      } else {
+        setBuscou(true);
+      }
     } finally {
       setConsultando(false);
     }
@@ -211,6 +220,12 @@ export function BarcodeLookup({
         />
       )}
 
+      {consultando && !buscou && (
+        <div className="fade-in mb-3 rounded-xl bg-blue-50 p-4 text-center text-sm text-blue-700">
+          Buscando dados do produto neste aparelho e no catálogo online…
+        </div>
+      )}
+
       {buscou && !gtinValido(codigo) && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
           <Icon.alert size={16} className="flex-shrink-0" />O código não parece um GTIN válido, mas
@@ -286,7 +301,11 @@ export function BarcodeLookup({
           ) : (
             <>
               <Icon.alert size={28} className="mx-auto mb-2 text-amber-700" />
-              <div className="font-medium text-gray-900">Produto não cadastrado</div>
+              <div className="font-medium text-gray-900">
+                {onlineDisponivel
+                  ? "Produto não encontrado"
+                  : "Produto não cadastrado neste aparelho"}
+              </div>
               <div className="mb-3 mt-1 text-xs text-gray-500">{"Código: " + codigo}</div>
               {avisoOnline && (
                 <div className="mb-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-700">
