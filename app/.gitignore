@@ -1,0 +1,27 @@
+# dependências
+node_modules
+
+# build
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+
+# vitest
+coverage
+
+# CA local do proxy corporativo (máquina-específica; passada via NODE_EXTRA_CA_CERTS)
+.corp-ca.pem
