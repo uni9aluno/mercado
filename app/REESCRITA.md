@@ -89,23 +89,35 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 - **Fase 2 — Domínio.** Motor de preços, previsão, comparador (bug `limite90`
   corrigido), backup, barcode, `registrarCompra`. ✅
 - **Fase 3 — UI base + hooks.** ~15 componentes `ui/`, hooks, roteador. ✅
-- **Fase 4 — Telas portadas 1:1** (+ melhorias de UI acordadas). Em andamento —
-  agentes em paralelo, um por tela, com revisor concorrente por entrega.
+- **Fase 4 — Telas portadas 1:1** (+ melhorias de UI acordadas). ✅ As 8 telas,
+  portadas por agentes em paralelo (escopo isolado por diretório).
 - **Fase 5 — Features novas.** Catálogo de EAN (integração + botão no
-  BarcodeLookup + seção na Config) e Modo Compra completo.
+  BarcodeLookup + seção na Config — a Config já tem a seção; falta o
+  BarcodeLookup e o BarcodeScanner) e Modo Compra completo.
 - **Fase 6 — Paridade, migração real, publicação.** Checklist tela a tela, testar
   a migração num perfil de navegador com dados v4 reais, publicar na mesma URL.
 
 ## Onde estamos
 
-**Fases 0-3 completas e commitadas na branch `vite-rewrite`.**
+**Fases 0-4 completas e commitadas na branch `vite-rewrite`.**
 
-- 69 testes Vitest verdes (migração v4→v5, seed, motor de preços, previsão,
-  comparador, backup, barcode, `registrarCompra`).
+- 101 testes Vitest verdes, 13 arquivos (migração v4→v5, seed + corrida do
+  StrictMode, motor de preços, previsão, comparador, backup, barcode,
+  `registrarCompra`, e os cálculos puros de Dashboard/Calendário/cesta/Lista).
 - `tsc`, `eslint` e `vite build` (com PWA) limpos.
-- Roteador verificado no navegador (nav desktop + mobile, 8 telas com stubs).
+- As 8 telas rodam no navegador, console limpo. Cascata end-to-end verificada:
+  adicionar item → registrar compra → baixa automática da lista → aparece no
+  Histórico com variação vs mês anterior → alimenta o Comparador.
 
-**Fase 4 em andamento:** agentes portando Config, Histórico e Produtos.
+**Falta na Fase 4 (dívida pequena, não bloqueante):**
+- Os agentes criaram `icons.tsx` locais em várias features (`Pin`, `Funnel`,
+  `Chevron`, `Alert`, `Share`) — consolidar em `ui/icons.tsx`.
+- `PurchaseForm` edita a compra por "delete + recreate", o que troca o uid da
+  compra. Funciona, mas seria mais limpo com `update`.
+
+**Fase 5 — próxima:** Modo Compra (`features/buy-mode/`) e o leitor de código de
+barras (`features/barcode/`: `BarcodeScanner`, `BarcodeLookup`, `AvisoCamera`)
+ligado às integrações de EAN que já existem (`integrations/eanCatalog.ts`).
 
 **Pendente de você:**
 - Autorizar o `git push --force` para `uni9aluno/mercado` (só necessário na
