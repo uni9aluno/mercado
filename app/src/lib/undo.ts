@@ -4,13 +4,13 @@
 
 const DURACAO = 6000;
 
-interface Estado {
+export interface UndoEstado {
   label: string;
   undo: () => void | Promise<void>;
   expiraEm: number;
 }
 
-let estado: Estado | null = null;
+let estado: UndoEstado | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 const ouvintes = new Set<() => void>();
 
@@ -40,8 +40,13 @@ export function undoClear() {
   notificar();
 }
 
-export function undoSnapshot(): { label: string } | null {
-  return estado ? { label: estado.label } : null;
+/**
+ * Snapshot para `useSyncExternalStore` — devolve a MESMA referência enquanto o
+ * estado não muda (o objeto `estado` só é recriado em `undoPush`/`undoClear`).
+ * Retornar um objeto novo a cada chamada faria o React re-renderizar em loop.
+ */
+export function undoSnapshot(): UndoEstado | null {
+  return estado;
 }
 
 export function undoSubscribe(fn: () => void): () => void {
