@@ -147,13 +147,9 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
   }, [n]);
 
   // itens "A comprar" da lista atual — habilita "Iniciar compra".
-  const pendentesAtual = useMemo(
-    () => n.filter((z) => z.status === "A comprar"),
-    [n],
-  );
+  const pendentesAtual = useMemo(() => n.filter((z) => z.status === "A comprar"), [n]);
   // "compra em andamento": há uma sessão salva desta lista?
-  const sessaoAtual =
-    sessao && listId != null && sessao.listId === listId ? sessao : null;
+  const sessaoAtual = sessao && listId != null && sessao.listId === listId ? sessao : null;
   const sessaoOutraLista = sessao && listId != null && sessao.listId !== listId;
   const sessaoResumo = useMemo(() => {
     if (!sessaoAtual) return { n: 0, total: 0 };
@@ -251,17 +247,13 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
     [pick],
   );
 
-  const offOpen =
-    showOff === null ? listId == null && inactiveLists.length > 0 : showOff;
+  const offOpen = showOff === null ? listId == null && inactiveLists.length > 0 : showOff;
 
   // filtro + ordenação (pinados sempre no topo do bloco "A comprar").
   const visiveis = useMemo(() => {
     const txt = norm(buscaDeb || "");
     const arr = n.filter((q) => {
-      if (
-        txt &&
-        !((q.prod && (q.prod.nameNorm || norm(q.prod.name))) || "").includes(txt)
-      ) {
+      if (txt && !((q.prod && (q.prod.nameNorm || norm(q.prod.name))) || "").includes(txt)) {
         return false;
       }
       if (catFiltro && ((q.prod && q.prod.category) || "") !== catFiltro) return false;
@@ -461,9 +453,7 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
     }
     if (k === "ArrowDown" || k === "ArrowUp") {
       ev.preventDefault();
-      const rows = [
-        ...document.querySelectorAll<HTMLElement>('[data-list-row="1"]'),
-      ];
+      const rows = [...document.querySelectorAll<HTMLElement>('[data-list-row="1"]')];
       const ix = rows.indexOf(ev.currentTarget);
       const nx = rows[ix + (k === "ArrowDown" ? 1 : -1)];
       if (nx) nx.focus();
@@ -500,10 +490,10 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
 
   return (
     <div className="fade-in">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Lista de compras</h1>
         {listId != null && (
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <Btn variant="secondary" onClick={() => setLookupOpen(true)}>
               <Icon.search size={16} />
               Código
@@ -782,16 +772,14 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
                           talvez não precise — comprado há pouco
                         </div>
                       ) : null}
-                      {listaAtual &&
-                        listaAtual.storeId != null &&
-                        it.status === "A comprar" && (
-                          <button
-                            onClick={() => void marcarNaoEncontrado(it)}
-                            className="mt-0.5 text-xs text-gray-400 underline"
-                          >
-                            Não encontrei aqui
-                          </button>
-                        )}
+                      {listaAtual && listaAtual.storeId != null && it.status === "A comprar" && (
+                        <button
+                          onClick={() => void marcarNaoEncontrado(it)}
+                          className="mt-0.5 text-xs text-gray-400 underline"
+                        >
+                          Não encontrei aqui
+                        </button>
+                      )}
                     </div>
 
                     <input
@@ -816,7 +804,9 @@ export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => vo
                     <button
                       onClick={() => void fixar(it)}
                       aria-label={it.pinned ? "Desafixar item" : "Fixar no topo"}
-                      className={"flex-shrink-0 " + (it.pinned ? "text-emerald-600" : "text-gray-300")}
+                      className={
+                        "flex-shrink-0 " + (it.pinned ? "text-emerald-600" : "text-gray-300")
+                      }
                     >
                       <Icon.pin size={16} />
                     </button>

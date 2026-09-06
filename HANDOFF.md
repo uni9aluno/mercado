@@ -17,6 +17,10 @@
   “Buscando dados…” até a resposta online, tolera 10 s em rede móvel e só então
   oferece nova tentativa. Validado também com `7898215151708` (Leite Integral
   Piracanjuba, 1 L).
+- UX móvel revisada em todas as telas: conteúdo com margem lateral mínima de
+  16 px, suporte aos `safe-area-inset` de Android/iOS, navegação inferior com
+  alvos maiores, modais e barras fixas afastados das bordas e cabeçalhos de
+  Lista/Produtos responsivos em telas estreitas.
 
 ---
 

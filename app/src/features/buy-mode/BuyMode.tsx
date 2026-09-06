@@ -198,7 +198,9 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
     // o ✕ descarta o progresso não salvo; "Salvar e sair" é o caminho para guardar.
     if (
       cont.marcados > 0 &&
-      !confirm("Sair sem salvar? O que você marcou será perdido. Use “Salvar e sair” para continuar depois.")
+      !confirm(
+        "Sair sem salvar? O que você marcou será perdido. Use “Salvar e sair” para continuar depois.",
+      )
     ) {
       return;
     }
@@ -272,7 +274,7 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
   if (registrada) {
     return (
       <div className="fixed inset-0 z-40 overflow-auto bg-white">
-        <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <div className="safe-screen-x safe-screen-top safe-screen-bottom mx-auto max-w-md py-16 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <Icon.check size={32} />
           </div>
@@ -307,12 +309,12 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
   // -------------------------------------------------------------------------
   const cabecalhoVerde =
     fase === "preview" ? (
-      <div className="bg-emerald-600 px-4 pb-5 pt-4 text-white">
+      <div className="safe-screen-x safe-screen-top bg-emerald-600 pb-5 text-white">
         <div className="flex items-start gap-3">
           <button
             onClick={onClose}
             aria-label="Voltar"
-            className="-ml-1 mt-0.5 flex-shrink-0 rounded-full p-1 hover:bg-white/10"
+            className="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full hover:bg-white/10"
           >
             <svg
               width="24"
@@ -341,12 +343,12 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
         </div>
       </div>
     ) : (
-      <div className="bg-emerald-600 px-4 pb-5 pt-4 text-white">
+      <div className="safe-screen-x safe-screen-top bg-emerald-600 pb-5 text-white">
         <div className="flex items-start gap-3">
           <button
             onClick={fechar}
             aria-label="Fechar"
-            className="-ml-1 mt-0.5 flex-shrink-0 rounded-full p-1 hover:bg-white/10"
+            className="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full hover:bg-white/10"
           >
             <Icon.x size={24} />
           </button>
@@ -354,8 +356,8 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
             <div className="text-xs font-medium text-emerald-100">Modo compra ativo</div>
             <div className="truncate text-2xl font-bold">Nova compra</div>
             <div className="text-sm text-emerald-100">
-              {cont.pendentes} {cont.pendentes === 1 ? "pendente" : "pendentes"} ·{" "}
-              {cont.marcados} {cont.marcados === 1 ? "marcado" : "marcados"}
+              {cont.pendentes} {cont.pendentes === 1 ? "pendente" : "pendentes"} · {cont.marcados}{" "}
+              {cont.marcados === 1 ? "marcado" : "marcados"}
             </div>
           </div>
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow">
@@ -372,7 +374,7 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
     return (
       <div className="fixed inset-0 z-40 flex flex-col bg-emerald-600">
         {cabecalhoVerde}
-        <div className="flex-1 overflow-auto rounded-t-3xl bg-white px-4 pb-28 pt-5">
+        <div className="safe-screen-x flex-1 overflow-auto rounded-t-3xl bg-white pb-28 pt-5">
           <div className="mb-4 flex items-start gap-3 rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
             <Icon.eye size={20} className="mt-0.5 flex-shrink-0 text-emerald-600" />
             <span>Modo visualização: confira a lista sem marcar compras.</span>
@@ -426,7 +428,7 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
           </div>
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 border-t border-gray-100 bg-white p-4">
+        <div className="safe-fixed-footer fixed inset-x-0 bottom-0 border-t border-gray-100 bg-white">
           <Btn className="w-full py-3 text-base" onClick={entrarNoModoCompra}>
             <Icon.store size={18} />
             Entrar no modo compra
@@ -442,7 +444,7 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-emerald-600">
       {cabecalhoVerde}
-      <div className="flex-1 overflow-auto rounded-t-3xl bg-white px-4 pb-28 pt-5">
+      <div className="safe-screen-x flex-1 overflow-auto rounded-t-3xl bg-white pb-28 pt-5">
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-emerald-50 p-4 text-center">
             <Icon.cart size={20} className="mx-auto mb-1 text-emerald-600" />
@@ -470,7 +472,9 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
           >
             <path d="M9 11V6a2 2 0 0 1 4 0v5m0-1.5a2 2 0 0 1 4 0V13m0-1a2 2 0 0 1 4 0v3a6 6 0 0 1-6 6h-2a7 7 0 0 1-5-2l-3-3a2 2 0 0 1 3-3l1 1V6a2 2 0 0 1 4 0v5" />
           </svg>
-          <span>Marque o que entrou no carrinho. Se quiser parar e voltar depois, use Salvar e sair.</span>
+          <span>
+            Marque o que entrou no carrinho. Se quiser parar e voltar depois, use Salvar e sair.
+          </span>
         </div>
 
         <div className="mb-3 flex items-center justify-between">
@@ -495,7 +499,11 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
               const pr = prExib ?? 0;
               const aberto = editando === it.id;
               const estimativa = priceFn(it);
-              const alvo = effectiveTarget(prod, priceIndex.get(it.productId), rules.targetDiscount);
+              const alvo = effectiveTarget(
+                prod,
+                priceIndex.get(it.productId),
+                rules.targetDiscount,
+              );
               const farol = light(pr, alvo, rules.tolerance);
               return (
                 <div
@@ -533,7 +541,8 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
                       aria-label="Editar quantidade e preço"
                       aria-expanded={aberto}
                       className={
-                        "flex-shrink-0 p-1 " + (aberto ? "text-emerald-700" : "text-emerald-500")
+                        "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg " +
+                        (aberto ? "text-emerald-700" : "text-emerald-500")
                       }
                     >
                       <Icon.pencil size={18} />
@@ -567,7 +576,9 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
                           onFocus={selectOnFocus}
                           onChange={(e) => {
                             const v = e.target.value;
-                            patch(it.id, { unitPrice: v === "" ? null : Math.max(0, Number(v) || 0) });
+                            patch(it.id, {
+                              unitPrice: v === "" ? null : Math.max(0, Number(v) || 0),
+                            });
                           }}
                           className="mt-0.5 w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
                         />
@@ -589,7 +600,7 @@ export function BuyMode({ listId, onClose, onNavigate, retomar }: Props) {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 flex gap-3 border-t border-gray-100 bg-white p-4">
+      <div className="safe-fixed-footer fixed inset-x-0 bottom-0 flex gap-3 border-t border-gray-100 bg-white">
         <Btn variant="secondary" className="flex-1 py-3" onClick={() => void salvarESair()}>
           <Icon.save size={18} />
           Salvar e sair

@@ -54,7 +54,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let quaggaAtivo = false;
     // O módulo Quagga só é carregado se o fallback for usado.
-    type QuaggaMod = typeof import("@ericblade/quagga2")["default"];
+    type QuaggaMod = (typeof import("@ericblade/quagga2"))["default"];
     let Quagga: QuaggaMod | null = null;
     type QuaggaCb = Parameters<QuaggaMod["onDetected"]>[0];
     let quaggaCb: QuaggaCb | null = null;
@@ -192,9 +192,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
           quaggaCb = (x) => {
             const c = x && x.codeResult && x.codeResult.code;
             if (c) {
-              const errs = (x.codeResult.decodedCodes || []).filter(
-                (d) => d.error !== undefined,
-              );
+              const errs = (x.codeResult.decodedCodes || []).filter((d) => d.error !== undefined);
               const med = errs.length
                 ? errs.reduce((a, d) => a + (d.error ?? 0), 0) / errs.length
                 : 0;
@@ -233,21 +231,18 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
       ) : (
         <div ref={boxRef} className="barcode-box h-full w-full" />
       )}
-      <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-4">
+      <div className="safe-screen-x safe-screen-top absolute inset-x-0 top-0 flex items-start justify-between gap-2">
         <div className="max-w-md rounded-lg bg-black/60 px-3 py-2 text-sm text-white">{msg}</div>
         <button
           onClick={onClose}
-          className="h-10 w-10 flex-shrink-0 rounded-full bg-white text-xl text-gray-900"
+          className="h-11 w-11 flex-shrink-0 rounded-full bg-white text-xl text-gray-900"
           aria-label="Fechar câmera"
         >
           ×
         </button>
       </div>
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className="rounded-xl border-2 border-white"
-          style={{ width: "78%", height: "34%" }}
-        />
+        <div className="rounded-xl border-2 border-white" style={{ width: "78%", height: "34%" }} />
       </div>
     </div>,
     document.body,

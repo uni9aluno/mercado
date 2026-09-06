@@ -32,25 +32,32 @@ export function Modal({ open, onClose, title, children, wide }: Props) {
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div
         className={
-          "relative max-h-[88vh] w-full overflow-auto rounded-t-2xl bg-white shadow-2xl fade-in md:rounded-2xl " +
+          "app-modal-shell relative max-h-[88vh] w-full overflow-auto rounded-t-2xl bg-white shadow-2xl fade-in md:rounded-2xl " +
           (wide ? "md:max-w-2xl" : "md:max-w-md")
         }
       >
         {title != null && (
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
+          <div className="safe-screen-x sticky top-0 z-10 flex items-center justify-between border-b bg-white py-2">
             <h2 className="font-semibold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Fechar"
-              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
           </div>
         )}
-        <div className="p-4">{children}</div>
+        <div className="safe-modal-content">{children}</div>
       </div>
     </div>,
     document.body,

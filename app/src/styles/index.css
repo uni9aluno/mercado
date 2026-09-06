@@ -35,12 +35,63 @@ body {
   margin: 0;
   background: #f8fafc;
   color: #0f172a;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
 }
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Respiro consistente no mobile e suporte a telas edge-to-edge. `viewport-fit=cover`
+ * permite que Android/iOS exponham os insets; o mínimo de 16 px continua valendo
+ * em aparelhos sem recorte. No desktop, o espaçamento volta a ser controlado pelo shell.
+ */
+.app-main {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}
+.app-bottom-nav {
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}
+.safe-screen-x {
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}
+.safe-screen-top {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+.safe-screen-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+.safe-modal-content {
+  padding: 1rem max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+}
+.app-modal-shell {
+  max-height: calc(88dvh - env(safe-area-inset-top, 0px));
+}
+.safe-fixed-footer {
+  padding-top: 1rem;
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    padding: 0;
+  }
 }
 
 /* 16px evita o zoom automático do iOS ao focar um campo */

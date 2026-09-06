@@ -14,13 +14,7 @@ import {
   useShoppingItems,
 } from "@/hooks";
 import { repos } from "@/data";
-import {
-  baseContent,
-  effectiveTarget,
-  light,
-  LIGHT_DOT,
-  priceFor,
-} from "@/domain/priceIndex";
+import { baseContent, effectiveTarget, light, LIGHT_DOT, priceFor } from "@/domain/priceIndex";
 import { BarcodeLookup, type BarcodePrefill } from "@/features/barcode";
 import { contributeEan } from "@/integrations/eanCatalog";
 import { Btn, Dica, Empty, Icon, Modal, SearchBox, Thumb } from "@/ui";
@@ -116,9 +110,9 @@ export function Products() {
 
   return (
     <div className="fade-in">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <Btn variant="secondary" onClick={() => setLookup(true)}>
             <Icon.search size={16} />
             Código
@@ -186,9 +180,7 @@ export function Products() {
                   onClick={() => abrirEdicao(p)}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
                 >
-                  <span
-                    className={"h-2 w-2 flex-shrink-0 rounded-full " + LIGHT_DOT[farol]}
-                  />
+                  <span className={"h-2 w-2 flex-shrink-0 rounded-full " + LIGHT_DOT[farol]} />
                   <Thumb src={p.image} nome={p.name} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-gray-900">{p.name}</div>
@@ -200,9 +192,7 @@ export function Products() {
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <div className="text-sm font-semibold text-gray-900">{fmt(preco)}</div>
-                    {alvo != null && (
-                      <div className="text-xs text-gray-400">alvo {fmt(alvo)}</div>
-                    )}
+                    {alvo != null && <div className="text-xs text-gray-400">alvo {fmt(alvo)}</div>}
                   </div>
                 </button>
               );
@@ -211,11 +201,7 @@ export function Products() {
         </section>
       ))}
 
-      <Modal
-        open={aberto}
-        onClose={fechar}
-        title={editando ? "Editar produto" : "Novo produto"}
-      >
+      <Modal open={aberto} onClose={fechar} title={editando ? "Editar produto" : "Novo produto"}>
         <ProductForm
           key={editando ? editando.id : prefill ? "prefill" : "novo"}
           product={editando ?? prefill ?? undefined}

@@ -17,7 +17,7 @@ export function Btn({ children, variant = "primary", className = "", ...rest }: 
   return (
     <button
       className={
-        "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
         BTN[variant] +
         " " +
         className
