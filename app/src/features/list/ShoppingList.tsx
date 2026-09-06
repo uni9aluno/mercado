@@ -33,7 +33,6 @@ import { brDate, fmt, norm } from "@/lib/text";
 import { Btn, Dica, Empty, Icon, MiniStat, Modal, ProductPicker, SearchBox, SwipeRow } from "@/ui";
 import { selectOnFocus } from "@/ui";
 import type { Priority, Product, ShoppingItem, ShoppingList as ShoppingListRow } from "@/db/types";
-import { Chevron, Funnel, Pin } from "./icons";
 import { ListForm } from "./ListForm";
 
 type Ordem = "prio" | "nome" | "valor" | "acima";
@@ -489,7 +488,7 @@ export function ShoppingList() {
                       : "border-gray-300 bg-white text-gray-500")
                   }
                 >
-                  <Funnel size={16} />
+                  <Icon.funnel size={16} />
                 </button>
               </div>
 
@@ -658,7 +657,7 @@ export function ShoppingList() {
                       aria-label={it.pinned ? "Desafixar item" : "Fixar no topo"}
                       className={"flex-shrink-0 " + (it.pinned ? "text-emerald-600" : "text-gray-300")}
                     >
-                      <Pin size={16} />
+                      <Icon.pin size={16} />
                     </button>
 
                     <button
@@ -689,7 +688,7 @@ export function ShoppingList() {
             className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-600"
           >
             Desativadas ({inactiveLists.length})
-            <Chevron
+            <Icon.chevron
               size={16}
               className={"text-gray-400 transition-transform " + (offOpen ? "rotate-180" : "")}
             />

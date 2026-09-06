@@ -104,6 +104,36 @@ export const Icon = {
       <circle cx="12" cy="12" r="2.5" />
     </>,
   ),
+  // --- portados do conjunto `I` do MercadoDoCasal.html (antes espalhados em features/*/icons.tsx) ---
+  alert: wrap(
+    <>
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    </>,
+  ),
+  share: wrap(
+    <>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m17 8-5-5-5 5" />
+      <path d="M12 3v12" />
+    </>,
+  ),
+  pin: wrap(<path d="M9 3h6a2 2 0 0 1 2 2v8l2 2H5l2-2V5a2 2 0 0 1 2-2z M12 17v4" />),
+  funnel: wrap(<path d="M3 4h18l-7 8v6l-4 2v-8z" />),
+  chevron: wrap(<path d="m6 9 6 6 6-6" />),
+  flag: wrap(
+    <>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <path d="M4 22v-7" />
+    </>,
+  ),
+  save: wrap(
+    <>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+      <path d="M17 21v-8H7v8M7 3v5h8" />
+    </>,
+  ),
 };
 
 export type IconName = keyof typeof Icon;

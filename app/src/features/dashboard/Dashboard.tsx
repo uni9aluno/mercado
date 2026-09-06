@@ -17,8 +17,7 @@ import { repos } from "@/data";
 import { linhasOrcamento } from "@/domain/budget";
 import { agoraBr, fmt, fmtPct, today } from "@/lib/text";
 import type { Id, Product } from "@/db/types";
-import { Dica, Empty, Modal, Stat } from "@/ui";
-import { Alert } from "./icons";
+import { Dica, Empty, Icon, Modal, Stat } from "@/ui";
 import { computeDashboard, textoRestante } from "./Dashboard.calc";
 
 interface Props {
@@ -122,7 +121,7 @@ export function Dashboard({ onNavigate }: Props) {
                   : "bg-blue-50 text-blue-700")
             }
           >
-            <Alert size={16} className="mt-0.5 flex-shrink-0" />
+            <Icon.alert size={16} className="mt-0.5 flex-shrink-0" />
             <span className="min-w-0 flex-1">
               {al.m}
               {destino && al.goLabel && onNavigate && (

@@ -11,8 +11,7 @@ import { undoPush } from "@/lib/undo";
 import { brDate, fmt } from "@/lib/text";
 import { BUYER_LABEL, PAYMENT_METHODS, RATING_LABEL } from "@/lib/constants";
 import type { Buyer, Id, Purchase, PurchaseItem } from "@/db/types";
-import { Dica, Empty } from "@/ui";
-import { Chevron, Funnel } from "./icons";
+import { Dica, Empty, Icon } from "@/ui";
 import { PurchaseForm } from "./PurchaseForm";
 import { PostPurchaseFeedback } from "./PostPurchaseFeedback";
 
@@ -130,9 +129,9 @@ export function History() {
             (temFiltro ? "text-emerald-700" : "text-gray-600")
           }
         >
-          <Funnel size={16} />
+          <Icon.funnel size={16} />
           {temFiltro ? "Filtros ativos" : "Filtrar"}
-          <Chevron
+          <Icon.chevron
             size={14}
             className={"text-gray-400 transition-transform " + (filtOpen ? "rotate-180" : "")}
           />
@@ -265,7 +264,7 @@ export function History() {
                       </div>
                       <div className="flex flex-shrink-0 items-center gap-2">
                         <span className="text-sm font-semibold">{fmt(p.total)}</span>
-                        <Chevron
+                        <Icon.chevron
                           size={16}
                           className={
                             "text-gray-400 transition-transform " + (open ? "rotate-180" : "")

@@ -34,7 +34,6 @@ import {
 import { linhasPorLoja } from "./cestaRows";
 import { brDate, fmt, fmtPct, norm } from "@/lib/text";
 import { Dica, Empty, Icon, inputCls, PriceSpark, SearchBox } from "@/ui";
-import { Share } from "./icons";
 
 const MODOS: { id: ModoBase; label: string }[] = [
   { id: "recent", label: "Mais recente" },
@@ -254,7 +253,7 @@ export function Compare() {
           onClick={() => void compartilhar()}
           className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
         >
-          <Share size={16} />
+          <Icon.share size={16} />
           Compartilhar
         </button>
       </div>
