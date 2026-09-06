@@ -18,7 +18,7 @@ import { Btn } from "@/ui";
 export interface FeedbackInfo {
   /** uid da compra. */
   id: Id;
-  /** uid do mercado (ou null) — usado só para a chave de `missingByStore`. */
+  /** uid do mercado (ou null) — chave de `products.missingByStore`. */
   storeId: Id | null;
   /** itens da compra: uid do produto + nome. */
   items: { id: Id; name: string }[];
@@ -48,19 +48,27 @@ export function PostPurchaseFeedback({ info, onSaved }: Props) {
 
   const salvar = async () => {
     if (!rating) return;
-    const nomes =
-      rating === "faltou" ? info.items.filter((it) => faltando.has(it.id)).map((it) => it.name) : [];
+    const faltaram =
+      rating === "faltou" ? info.items.filter((it) => faltando.has(it.id)) : [];
+    const nomes = faltaram.map((it) => it.name);
 
-    const patch: {
-      rating: Rating;
-      missingItems: string[];
-      missingByStore?: Record<string, string[]>;
-    } = { rating, missingItems: nomes };
-    if (rating === "faltou" && info.storeId != null && nomes.length) {
-      patch.missingByStore = { [info.storeId]: nomes };
+    // 1. a compra guarda os nomes do que faltou (display no Histórico/Calendário)
+    await repos.purchases.update(info.id, { rating, missingItems: nomes });
+
+    // 2. cada produto que faltou ganha +1 no contador daquele mercado
+    //    (products.missingByStore = { storeId: N }) — é o que dispara o aviso
+    //    "esse produto já faltou N vezes aqui" ao re-adicionar na lista.
+    if (info.storeId != null) {
+      const chave = info.storeId;
+      for (const it of faltaram) {
+        const prod = await repos.products.byId(it.id);
+        if (!prod) continue;
+        const mapa: Record<string, number> = { ...(prod.missingByStore ?? {}) };
+        mapa[chave] = (Number(mapa[chave]) || 0) + 1;
+        await repos.products.update(it.id, { missingByStore: mapa });
+      }
     }
 
-    await repos.purchases.update(info.id, patch);
     setSalvo(true);
     onSaved?.();
   };

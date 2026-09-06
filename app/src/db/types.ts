@@ -59,6 +59,9 @@ export interface ProductRow extends RowBase {
   comparisonGroup?: string | null;
   /** data URI (JPEG ~200px) baixada da Open Food Facts ou escolhida pelo usuário. */
   image?: string | null;
+  /** contador { uid do mercado: nº de vezes que faltou aqui }. Dispara o aviso
+   *  "esse produto já faltou N vezes neste mercado" ao re-adicionar na lista. */
+  missingByStore?: Record<string, number>;
 }
 
 export interface PurchaseRow extends RowBase {
