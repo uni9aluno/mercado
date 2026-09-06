@@ -23,6 +23,12 @@ minificado) para o projeto Vite + React 18 + TypeScript deste diretório (`app/`
      `@/domain/priceIndex` tem `priceFor`, `effectiveTarget`, `light`, `LIGHT_CLASS`,
      `LIGHT_DOT`, `baseContent`.
    - Lookups: `@/hooks/useMaps` devolve `productById`, `storeById`, `categoryById`.
+   - Derivados globais: `@/hooks` → `useDerived()` dá `{ budget (com .total),
+     rules (defaults preenchidos), activeListIds, activeListId, backupAt }`.
+   - Listas: `@/hooks` → `useShoppingByList()` dá `{ shoppingByList (Map
+     listId→itens), listById, activeLists, inactiveLists }`.
+   - Compras: `@/hooks` → `usePurchaseData()` dá `{ purchaseById, itemsByPurchase
+     (Map purchaseId→itens), historicoByProduct (Map productId→datas) }`.
    - Domínio: `@/domain/forecast` (previsão), `@/domain/compare` (comparador),
      `@/domain/budget` (orçamento), `@/domain/backup`, `@/domain/purchase`
      (`registrarCompra`), `@/domain/barcode`.
