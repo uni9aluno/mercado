@@ -9,7 +9,7 @@
 
 @layer utilities {
   .fade-in {
-    animation: fade-in 0.18s ease-out;
+    animation: fade-in 0.18s ease both;
   }
   @keyframes fade-in {
     from {
@@ -23,7 +23,53 @@
   }
 }
 
-/* scrollbar discreta (portado 1:1) */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 16px evita o zoom automático do iOS ao focar um campo */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* foco visível consistente */
+:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* scrollbar discreta */
 * {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
@@ -37,12 +83,6 @@
   border-radius: 4px;
 }
 
-/* foco visível consistente */
-:focus-visible {
-  outline: 2px solid #059669;
-  outline-offset: 2px;
-}
-
 /* caixa do leitor de código de barras (câmera) */
 .barcode-box {
   position: relative;
@@ -54,8 +94,8 @@
   overflow: hidden;
   background: #000;
 }
-.barcode-box video,
-.barcode-box canvas {
+.barcode-box > video,
+.barcode-box > canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -63,15 +103,9 @@
   object-fit: cover;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
-body {
-  margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  -webkit-tap-highlight-color: transparent;
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
