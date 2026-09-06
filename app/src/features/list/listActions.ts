@@ -43,6 +43,43 @@ export function talvezTem(
   return passou >= 0 && passou < dias ? 1 : 0;
 }
 
+/**
+ * Decide o que fazer ao usar um código de barras na Lista. Puro — não toca no
+ * banco; só olha o produto e os itens da lista atual.
+ *
+ * - `item` presente e não "Cancelado"  → ação "marcar" (marcar como comprado).
+ * - senão                              → ação "adicionar" (item novo, qtd 1).
+ *
+ * `vezesFaltou` = quantas vezes esse produto já foi marcado como "não
+ * encontrado" no mercado da lista (`storeId`); a tela usa isso para pedir
+ * confirmação antes de adicionar quando ≥ 2. `null` de `storeId` → 0.
+ */
+export function acaoParaCodigo(
+  product: Pick<Product, "id" | "missingByStore">,
+  itensDaLista: Pick<ShoppingItem, "productId" | "status">[],
+  storeId: string | null,
+): { acao: "marcar" | "adicionar"; itemId?: string; vezesFaltou: number } {
+  const atual = (itensDaLista as ShoppingItem[]).find(
+    (q) => q.productId === product.id && q.status !== "Cancelado",
+  );
+  const chave = storeId != null ? String(storeId) : null;
+  const vezesFaltou =
+    chave && product.missingByStore ? Number(product.missingByStore[chave]) || 0 : 0;
+  return atual
+    ? { acao: "marcar", itemId: atual.id, vezesFaltou }
+    : { acao: "adicionar", vezesFaltou };
+}
+
+/** rótulo do botão de ação do BarcodeLookup na Lista. */
+export function rotuloAcaoCodigo(
+  product: Pick<Product, "id">,
+  itensDaLista: Pick<ShoppingItem, "productId" | "status">[],
+): string {
+  return itensDaLista.some((q) => q.productId === product.id && q.status !== "Cancelado")
+    ? "Marcar como comprado"
+    : "Adicionar à lista";
+}
+
 interface CloneCtx {
   purchases: { id: string; storeId: string | null; date: string; legacy?: 0 | 1 }[];
   itemsByPurchase: Map<string, PurchaseItem[]>;

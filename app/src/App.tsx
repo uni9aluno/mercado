@@ -80,7 +80,7 @@ export default function App() {
       {/* conteúdo */}
       <main className="min-w-0 flex-1 pb-20 md:pb-0">
         <Boundary>
-          <Tela />
+          <Tela onNavigate={ir} />
         </Boundary>
       </main>
 

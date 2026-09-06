@@ -5,13 +5,15 @@
 //  usuário (URL + anon key ficam em `settings.eanCatalog`). Reserva opcional:
 //  Open Food Facts (base pública, sem chave).
 //
-//  Estas funções serão consumidas na Fase 5 pelo BarcodeLookup. Aqui só existe
-//  a camada HTTP — sem React, sem Dexie. Qualquer erro/404/config incompleta
-//  vira `null` (ou no-op), nunca exceção que suba pra tela.
+//  Estas funções são consumidas na Fase 5 pelo BarcodeLookup. Aqui só existe
+//  a camada HTTP — sem React, sem Dexie, sem `document`/canvas. Qualquer
+//  erro/404/config incompleta vira `null` (ou no-op), nunca exceção que suba
+//  pra tela.
 //
-//  IMPORTANTE: a foto NÃO é baixada aqui. `image` sai sempre `null`; o download
-//  e o redimensionamento da imagem são da Fase 5 (integrations/image.ts, outro
-//  agente). Só texto trafega — e só texto é contribuído de volta.
+//  IMPORTANTE: a foto NÃO é baixada aqui. `image` sai sempre `null`; o que sai
+//  é `imageUrl` — a URL crua da capa (Supabase `image_url` ou OFF
+//  `image_front_small_url`). Quem baixa e redimensiona é o BarcodeLookup, via
+//  `@/integrations/image`. Só texto trafega — e só texto é contribuído de volta.
 // ===========================================================================
 
 export interface EanCatalogConfig {
@@ -28,8 +30,10 @@ export interface EanData {
   brand: string;
   packageSize: number | null;
   packageUnit: string;
-  /** sempre `null` nesta fase — ver comentário no topo. */
-  image: string | null;
+  /** URL crua da capa do produto (Supabase `image_url` / OFF
+   *  `image_front_small_url`), ou `null`. Esta camada é só HTTP — não toca
+   *  canvas; o BarcodeLookup baixa e reduz via `@/integrations/image`. */
+  imageUrl: string | null;
   source: "supabase" | "off";
 }
 
@@ -82,7 +86,7 @@ interface SupabaseRow {
   brand?: string;
   package_size?: number | string | null;
   package_unit?: string | null;
-  image?: string | null;
+  image_url?: string | null;
 }
 
 interface OffProduct {
@@ -126,8 +130,7 @@ export async function lookupEan(
           brand: (linha.brand ?? "").trim(),
           packageSize: Number.isFinite(size as number) ? (size as number) : null,
           packageUnit: (linha.package_unit ?? "").trim(),
-          // Fase 5: baixar a imagem via integrations/image.ts. Por ora, sem foto.
-          image: null,
+          imageUrl: (linha.image_url ?? "").trim() || null,
           source: "supabase",
         };
       }
@@ -135,7 +138,8 @@ export async function lookupEan(
   }
 
   // ---- 2. Open Food Facts (reserva) ----
-  if (cfg.off) {
+  // Só roda com a busca online ligada E o toggle da reserva marcado.
+  if (cfg.enabled && cfg.off) {
     const url =
       OFF_BASE +
       encodeURIComponent(codigo) +
@@ -153,8 +157,7 @@ export async function lookupEan(
           brand: (p.brands ?? "").split(",")[0].trim(),
           packageSize: qt ? qt.size : null,
           packageUnit: qt ? qt.unit : "",
-          // Fase 5: `p.image_front_small_url` é baixada e reduzida lá, não aqui.
-          image: null,
+          imageUrl: (p.image_front_small_url ?? "").trim() || null,
           source: "off",
         };
       }

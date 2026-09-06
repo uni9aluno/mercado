@@ -12,11 +12,17 @@ import { History } from "@/features/history/History";
 import { CalendarView } from "@/features/calendar/CalendarView";
 import { SettingsView } from "@/features/settings/SettingsView";
 
+/** props que o shell passa a toda tela — hoje só a navegação entre abas.
+ *  A maioria das telas ignora; Registrar e o Modo Compra usam para "Ver histórico". */
+export interface TelaProps {
+  onNavigate: (rota: string) => void;
+}
+
 export interface RouteDef {
   id: string;
   label: string;
   icon: IconName;
-  Component: ComponentType;
+  Component: ComponentType<Partial<TelaProps>>;
 }
 
 export const ROUTES: RouteDef[] = [

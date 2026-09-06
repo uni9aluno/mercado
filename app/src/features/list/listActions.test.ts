@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { talvezTem } from "./listActions";
-import type { Product } from "@/db/types";
+import { acaoParaCodigo, rotuloAcaoCodigo, talvezTem } from "./listActions";
+import type { Product, ShoppingItem } from "@/db/types";
 import type { PriceEntry } from "@/domain/priceIndex";
 
 const DIA = 86_400_000;
@@ -43,5 +43,63 @@ describe("talvezTem", () => {
 
   it("0 quando a frequência não está no mapa FREQ_DAYS", () => {
     expect(talvezTem(prod("quinzenal" as never), entry(isoAtras(1)))).toBe(0);
+  });
+});
+
+const item = (
+  productId: string,
+  status: ShoppingItem["status"],
+  id = productId + "-item",
+): ShoppingItem =>
+  ({ id, productId, status, priority: "Média", listId: "l1" }) as ShoppingItem;
+
+describe("acaoParaCodigo", () => {
+  const p = (missingByStore?: Record<string, number>): Pick<Product, "id" | "missingByStore"> => ({
+    id: "p1",
+    missingByStore,
+  });
+
+  it("adiciona quando o produto não está na lista", () => {
+    const r = acaoParaCodigo(p(), [item("p2", "A comprar")], "s1");
+    expect(r.acao).toBe("adicionar");
+    expect(r.itemId).toBeUndefined();
+  });
+
+  it("marca (com o itemId) quando o produto já está na lista e não está cancelado", () => {
+    const r = acaoParaCodigo(p(), [item("p1", "A comprar", "it-9")], "s1");
+    expect(r.acao).toBe("marcar");
+    expect(r.itemId).toBe("it-9");
+  });
+
+  it("um item cancelado não conta — volta a ser adicionar", () => {
+    const r = acaoParaCodigo(p(), [item("p1", "Cancelado")], "s1");
+    expect(r.acao).toBe("adicionar");
+  });
+
+  it("um item já comprado conta como presente (marcar, idempotente)", () => {
+    const r = acaoParaCodigo(p(), [item("p1", "Comprado", "it-c")], "s1");
+    expect(r.acao).toBe("marcar");
+    expect(r.itemId).toBe("it-c");
+  });
+
+  it("vezesFaltou vem do missingByStore do mercado da lista; 0 quando storeId é null", () => {
+    expect(acaoParaCodigo(p({ s1: 3 }), [], "s1").vezesFaltou).toBe(3);
+    expect(acaoParaCodigo(p({ s1: 3 }), [], "s2").vezesFaltou).toBe(0);
+    expect(acaoParaCodigo(p({ s1: 3 }), [], null).vezesFaltou).toBe(0);
+    expect(acaoParaCodigo(p(), [], "s1").vezesFaltou).toBe(0);
+  });
+});
+
+describe("rotuloAcaoCodigo", () => {
+  it('"Adicionar à lista" quando o produto não está na lista', () => {
+    expect(rotuloAcaoCodigo({ id: "p1" }, [item("p2", "A comprar")])).toBe("Adicionar à lista");
+  });
+  it('"Marcar como comprado" quando o produto está na lista', () => {
+    expect(rotuloAcaoCodigo({ id: "p1" }, [item("p1", "A comprar")])).toBe(
+      "Marcar como comprado",
+    );
+  });
+  it("item cancelado não conta", () => {
+    expect(rotuloAcaoCodigo({ id: "p1" }, [item("p1", "Cancelado")])).toBe("Adicionar à lista");
   });
 });

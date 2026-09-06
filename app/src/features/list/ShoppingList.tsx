@@ -5,9 +5,8 @@
 //  filtros/ordenação, linhas de item com swipe/teclado, limpar comprados,
 //  seção "Desativadas", modal "Adicionar à lista" e o ListForm (⋯).
 //
-//  Fase 5: o botão "Código" abre um alert; ele volta a abrir <BarcodeLookup>
-//  (e, no "produto não cadastrado", o <ProductForm> de @/features/products)
-//  quando o componente de leitura de código entrar.
+//  O botão "Código" abre o <BarcodeLookup>; no ramo "produto não cadastrado"
+//  ele abre o <ProductForm> de @/features/products com o prefill.
 // ===========================================================================
 
 import { useCallback, useMemo, useState } from "react";
@@ -16,10 +15,15 @@ import {
   useDerived,
   useMaps,
   usePriceIndex,
+  useSetting,
   useShoppingByList,
 } from "@/hooks";
 import { repos } from "@/data";
 import { undoPush } from "@/lib/undo";
+import { BuyMode } from "@/features/buy-mode";
+import { BarcodeLookup, type BarcodePrefill } from "@/features/barcode";
+import { ProductForm } from "@/features/products/ProductForm";
+import { contributeEan } from "@/integrations/eanCatalog";
 import {
   effectiveTarget,
   light,
@@ -32,7 +36,15 @@ import { PRIO_ORDER, PRIORITIES } from "@/lib/constants";
 import { brDate, fmt, norm } from "@/lib/text";
 import { Btn, Dica, Empty, Icon, MiniStat, Modal, ProductPicker, SearchBox, SwipeRow } from "@/ui";
 import { selectOnFocus } from "@/ui";
-import type { Priority, Product, ShoppingItem, ShoppingList as ShoppingListRow } from "@/db/types";
+import type {
+  EanCatalogSettings,
+  Priority,
+  Product,
+  ShoppingItem,
+  ShoppingList as ShoppingListRow,
+  ShoppingSessionSettings,
+} from "@/db/types";
+import { acaoParaCodigo, rotuloAcaoCodigo } from "./listActions";
 import { ListForm } from "./ListForm";
 
 type Ordem = "prio" | "nome" | "valor" | "acima";
@@ -52,13 +64,19 @@ interface FormState {
   list?: ShoppingListRow;
 }
 
-export function ShoppingList() {
+export function ShoppingList({ onNavigate }: { onNavigate?: (rota: string) => void }) {
   const { activeListId, activeListIds, rules } = useDerived();
   const { shoppingByList, listById, activeLists, inactiveLists } = useShoppingByList();
   const { products, productById, storeById, categories } = useMaps();
   const { priceIndex } = usePriceIndex();
+  const sessao = useSetting<ShoppingSessionSettings>("shoppingSession");
+  const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
 
   const [addOpen, setAddOpen] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [cadPrefill, setCadPrefill] = useState<BarcodePrefill | null>(null);
+  // uid da lista em Modo Compra (overlay tela cheia); { id, retomar } se retomando.
+  const [buyMode, setBuyMode] = useState<{ id: string; retomar: boolean } | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
   const [showOff, setShowOff] = useState<boolean | null>(null);
@@ -127,6 +145,46 @@ export function ShoppingList() {
     }
     return { pending, bought, total: pending + bought };
   }, [n]);
+
+  // itens "A comprar" da lista atual — habilita "Iniciar compra".
+  const pendentesAtual = useMemo(
+    () => n.filter((z) => z.status === "A comprar"),
+    [n],
+  );
+  // "compra em andamento": há uma sessão salva desta lista?
+  const sessaoAtual =
+    sessao && listId != null && sessao.listId === listId ? sessao : null;
+  const sessaoOutraLista = sessao && listId != null && sessao.listId !== listId;
+  const sessaoResumo = useMemo(() => {
+    if (!sessaoAtual) return { n: 0, total: 0 };
+    let count = 0;
+    let total = 0;
+    for (const z of n) {
+      const c = sessaoAtual.cart[z.id];
+      if (!c || !c.marcado) continue;
+      count++;
+      const q = c.quantity && c.quantity > 0 ? c.quantity : z.quantity || 1;
+      const pr = c.unitPrice != null ? c.unitPrice : z.price || 0;
+      total += q * pr;
+    }
+    return { n: count, total };
+  }, [sessaoAtual, n]);
+
+  const iniciarCompra = useCallback(() => {
+    if (listId == null || !listaAtual || listaAtual.storeId == null) return;
+    if (sessaoOutraLista) {
+      if (!confirm("Há uma compra em andamento em outra lista. Descartar e começar esta?")) {
+        return;
+      }
+      void repos.settings.remove("shoppingSession");
+    }
+    setBuyMode({ id: listId, retomar: false });
+  }, [listId, listaAtual, sessaoOutraLista]);
+
+  const descartarSessao = useCallback(async () => {
+    if (!confirm("Descartar a compra em andamento? O que você marcou será perdido.")) return;
+    await repos.settings.remove("shoppingSession");
+  }, []);
 
   // economia possível somando todas as listas ativas (itens acima do alvo).
   const economia = useMemo(() => {
@@ -326,6 +384,68 @@ export function ShoppingList() {
     setAddOpen(false);
   }
 
+  // BarcodeLookup → produto JÁ cadastrado: se está na lista, marca comprado;
+  // senão adiciona (mesma checagem de "não encontrado ≥ 2 vezes" do `adicionar`).
+  async function usarCodigo(prod: Product) {
+    if (listId == null) return;
+    const itens = shoppingByList.get(listId) ?? [];
+    const { acao, itemId, vezesFaltou } = acaoParaCodigo(
+      prod,
+      itens,
+      (listaAtual && listaAtual.storeId) ?? null,
+    );
+    if (acao === "marcar" && itemId) {
+      await repos.lists.updateItem(itemId, { status: "Comprado" });
+    } else {
+      if (
+        vezesFaltou >= 2 &&
+        !confirm(
+          "Esse produto já foi marcado como não encontrado " +
+            vezesFaltou +
+            " vezes neste mercado. Adicionar mesmo assim?",
+        )
+      ) {
+        return;
+      }
+      await repos.lists.addItem({
+        productId: prod.id,
+        quantity: 1,
+        status: "A comprar",
+        priority: "Média",
+        listId,
+      });
+    }
+    setLookupOpen(false);
+  }
+
+  // BarcodeLookup → produto NÃO cadastrado: cadastra + contribui + adiciona à lista.
+  async function cadastrarPorCodigo(saved: Product) {
+    const { id: _id, ...campos } = saved;
+    const novoId = await repos.products.create(campos);
+    if (eanCatalog && campos.barcode) {
+      await contributeEan(
+        {
+          barcode: campos.barcode,
+          name: campos.name,
+          brand: campos.brand,
+          packageSize: campos.packageSize,
+          packageUnit: campos.packageUnit ?? "",
+        },
+        eanCatalog,
+      );
+    }
+    if (listId != null) {
+      await repos.lists.addItem({
+        productId: novoId,
+        quantity: 1,
+        status: "A comprar",
+        priority: "Média",
+        listId,
+      });
+    }
+    setCadPrefill(null);
+  }
+
   const teclaItem = (ev: React.KeyboardEvent<HTMLDivElement>, it: ItemDecorado) => {
     if (ev.target !== ev.currentTarget) return;
     const k = ev.key;
@@ -367,17 +487,25 @@ export function ShoppingList() {
     });
   }
 
+  if (buyMode) {
+    return (
+      <BuyMode
+        listId={buyMode.id}
+        retomar={buyMode.retomar}
+        onClose={() => setBuyMode(null)}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
   return (
     <div className="fade-in">
       <div className="mb-3 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Lista de compras</h1>
         {listId != null && (
           <div className="flex gap-2">
-            <Btn
-              variant="secondary"
-              onClick={() => alert("A consulta por código de barras entra na Fase 5.")}
-            >
-              {/* Fase 5: <BarcodeLookup> — abrir o leitor de código aqui. */}
+            <Btn variant="secondary" onClick={() => setLookupOpen(true)}>
+              <Icon.search size={16} />
               Código
             </Btn>
             <Btn onClick={() => setAddOpen(true)}>
@@ -467,6 +595,39 @@ export function ShoppingList() {
             <MiniStat label="Comprado" value={fmt(r.bought)} tone="text-emerald-700" />
             <MiniStat label="Total" value={fmt(r.total)} />
           </div>
+
+          {sessaoAtual ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+              <div className="mb-2 text-sm font-medium text-amber-900">
+                Compra em andamento — {sessaoResumo.n} {sessaoResumo.n === 1 ? "item" : "itens"} ·{" "}
+                {fmt(sessaoResumo.total)}
+              </div>
+              <div className="flex gap-2">
+                <Btn
+                  className="flex-1"
+                  onClick={() => listId != null && setBuyMode({ id: listId, retomar: true })}
+                >
+                  Continuar
+                </Btn>
+                <Btn variant="secondary" onClick={() => void descartarSessao()}>
+                  Descartar
+                </Btn>
+              </div>
+            </div>
+          ) : listaAtual && listaAtual.storeId == null ? (
+            <div className="mb-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-500">
+              Vincule um mercado a esta lista para iniciar uma compra.
+            </div>
+          ) : (
+            <Btn
+              className="mb-4 w-full py-2.5"
+              disabled={pendentesAtual.length === 0}
+              onClick={iniciarCompra}
+            >
+              <Icon.store size={16} />
+              Iniciar compra
+            </Btn>
+          )}
 
           {economia > 0 && (
             <div className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
@@ -744,9 +905,24 @@ export function ShoppingList() {
         />
       </Modal>
 
-      {/* Fase 5: quando <BarcodeLookup> entrar, aqui volta o modal
-          "Cadastrar produto" com <ProductForm product={{ barcode }} … /> de
-          @/features/products/ProductForm para o caso "código não cadastrado". */}
+      {lookupOpen && (
+        <BarcodeLookup
+          title="Consultar código"
+          actionLabel={(p) => rotuloAcaoCodigo(p, shoppingByList.get(listId ?? "") ?? [])}
+          onClose={() => setLookupOpen(false)}
+          onUse={(p) => void usarCodigo(p)}
+          onCreate={(pf) => {
+            setLookupOpen(false);
+            setCadPrefill(pf);
+          }}
+        />
+      )}
+
+      {cadPrefill && (
+        <Modal open onClose={() => setCadPrefill(null)} title="Cadastrar produto">
+          <ProductForm product={cadPrefill} onSave={(p) => void cadastrarPorCodigo(p)} />
+        </Modal>
+      )}
 
       {form && (
         <ListForm

@@ -10,19 +10,22 @@
 //  do mesmo mercado) vive em `registrarCompra` (@/domain/purchase) — esta tela
 //  só monta os dados e mostra o resultado.
 //
-//  Fase 5: o botão "Código" abre a consulta por código de barras (e o cadastro
-//  de produto por código, reusando <ProductForm>). Por ora, só um aviso.
+//  O botão "Código" abre a consulta por código de barras (e, no ramo "produto
+//  não cadastrado", o cadastro por código reusando <ProductForm>).
 // ===========================================================================
 
 import { useMemo, useState } from "react";
-import { useDerived, useMaps, usePriceIndex, useProducts } from "@/hooks";
+import { useDerived, useMaps, usePriceIndex, useProducts, useSetting } from "@/hooks";
 import { repos } from "@/data";
 import { registrarCompra, type NovoItemCompra } from "@/domain/purchase";
 import { effectiveTarget, light, LIGHT_CLASS, priceFor } from "@/domain/priceIndex";
+import { BarcodeLookup, type BarcodePrefill } from "@/features/barcode";
+import { contributeEan } from "@/integrations/eanCatalog";
 import { Btn, Dica, Empty, Icon, Input, Modal, ProductPicker, Select, selectOnFocus } from "@/ui";
 import { fmt, today } from "@/lib/text";
 import { BUYERS, PAYMENT_METHODS, PURCHASE_TYPES } from "@/lib/constants";
-import type { Buyer, Id } from "@/db/types";
+import type { Buyer, EanCatalogSettings, Id, Product } from "@/db/types";
+import { ProductForm } from "@/features/products/ProductForm";
 import { PostPurchaseFeedback, type FeedbackInfo } from "@/features/history/PostPurchaseFeedback";
 
 interface Props {
@@ -47,6 +50,7 @@ export function RegisterPurchase({ onNavigate }: Props) {
   const { priceIndex } = usePriceIndex();
   const { productById, storeById } = useMaps();
   const { rules } = useDerived();
+  const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
 
   const [data, setData] = useState(today());
   const [storeId, setStoreId] = useState("");
@@ -56,6 +60,8 @@ export function RegisterPurchase({ onNavigate }: Props) {
   const [obs, setObs] = useState("");
   const [itens, setItens] = useState<NovoItemCompra[]>([]);
   const [pickerAberto, setPickerAberto] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [cadPrefill, setCadPrefill] = useState<BarcodePrefill | null>(null);
   const [sucesso, setSucesso] = useState<Sucesso | null>(null);
 
   const total = useMemo(
@@ -93,6 +99,41 @@ export function RegisterPurchase({ onNavigate }: Props) {
     });
     setPickerAberto(false);
   };
+
+  // BarcodeLookup → produto não cadastrado: cadastra + contribui + inclui na
+  // compra. Não passa por `incluirProduto` porque o `productById` (live query)
+  // ainda não conhece o produto recém-criado nesta renderização.
+  async function cadastrarPorCodigo(saved: Product) {
+    const { id: _id, ...campos } = saved;
+    const novoId = await repos.products.create(campos);
+    if (eanCatalog && campos.barcode) {
+      await contributeEan(
+        {
+          barcode: campos.barcode,
+          name: campos.name,
+          brand: campos.brand,
+          packageSize: campos.packageSize,
+          packageUnit: campos.packageUnit ?? "",
+        },
+        eanCatalog,
+      );
+    }
+    setItens((ar) =>
+      ar.some((it) => it.productId === novoId)
+        ? ar
+        : [
+            ...ar,
+            {
+              productId: novoId,
+              productName: campos.name,
+              category: campos.category,
+              quantity: 1,
+              unitPrice: campos.defaultPrice || 0,
+            },
+          ],
+    );
+    setCadPrefill(null);
+  }
 
   async function salvar() {
     if (!storeId) {
@@ -227,10 +268,8 @@ export function RegisterPurchase({ onNavigate }: Props) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Itens ({itens.length})</h2>
         <div className="flex gap-2">
-          <Btn
-            variant="secondary"
-            onClick={() => alert("A consulta por código de barras entra na Fase 5.")}
-          >
+          <Btn variant="secondary" onClick={() => setLookupOpen(true)}>
+            <Icon.search size={14} />
             Código
           </Btn>
           <Btn variant="secondary" onClick={() => setPickerAberto(true)}>
@@ -338,6 +377,28 @@ export function RegisterPurchase({ onNavigate }: Props) {
           onAdd={incluirProduto}
         />
       </Modal>
+
+      {lookupOpen && (
+        <BarcodeLookup
+          title="Consultar código"
+          actionLabel="Adicionar à compra"
+          onClose={() => setLookupOpen(false)}
+          onUse={(p) => {
+            incluirProduto(p.id);
+            setLookupOpen(false);
+          }}
+          onCreate={(pf) => {
+            setLookupOpen(false);
+            setCadPrefill(pf);
+          }}
+        />
+      )}
+
+      {cadPrefill && (
+        <Modal open onClose={() => setCadPrefill(null)} title="Cadastrar produto">
+          <ProductForm product={cadPrefill} onSave={(p) => void cadastrarPorCodigo(p)} />
+        </Modal>
+      )}
     </div>
   );
 }

@@ -91,33 +91,44 @@ troca acontece num único arquivo (`data/index.ts`) e nenhuma tela muda.
 - **Fase 3 — UI base + hooks.** ~15 componentes `ui/`, hooks, roteador. ✅
 - **Fase 4 — Telas portadas 1:1** (+ melhorias de UI acordadas). ✅ As 8 telas,
   portadas por agentes em paralelo (escopo isolado por diretório).
-- **Fase 5 — Features novas.** Catálogo de EAN (integração + botão no
-  BarcodeLookup + seção na Config — a Config já tem a seção; falta o
-  BarcodeLookup e o BarcodeScanner) e Modo Compra completo.
+- **Fase 5 — Features novas.** ✅ Modo Compra (`features/buy-mode/`) e o leitor de
+  código de barras (`features/barcode/`) + integração do catálogo EAN online.
 - **Fase 6 — Paridade, migração real, publicação.** Checklist tela a tela, testar
   a migração num perfil de navegador com dados v4 reais, publicar na mesma URL.
 
 ## Onde estamos
 
-**Fases 0-4 completas e commitadas na branch `vite-rewrite`.**
+**Fases 0-5 completas e commitadas na branch `vite-rewrite`.**
 
-- 101 testes Vitest verdes, 13 arquivos (migração v4→v5, seed + corrida do
+- 133 testes Vitest verdes, 15 arquivos (migração v4→v5, seed + corrida do
   StrictMode, motor de preços, previsão, comparador, backup, barcode,
-  `registrarCompra`, e os cálculos puros de Dashboard/Calendário/cesta/Lista).
-- `tsc`, `eslint` e `vite build` (com PWA) limpos.
-- As 8 telas rodam no navegador, console limpo. Cascata end-to-end verificada:
-  adicionar item → registrar compra → baixa automática da lista → aparece no
-  Histórico com variação vs mês anterior → alimenta o Comparador.
+  `registrarCompra`, cálculos puros de Dashboard/Calendário/cesta/Lista,
+  `buyMode.calc`, `eanCatalog`).
+- `tsc`, `eslint` e `vite build` (com PWA; Quagga2 vira chunk sob demanda de
+  ~156 KB) limpos.
+- As 8 telas + as 2 features novas rodam no navegador, console limpo.
+  Verificado end-to-end:
+  - **Modo Compra:** lista com mercado + pendentes → "Iniciar compra" → preview
+    (totais certos) → ativo → marcar itens (cards atualizam) → lápis edita
+    qtd/preço → "Finalizar compra" → compra gravada (preço editado persiste),
+    shoppingItems viram "Comprado" (não somem), `shoppingSession` limpa.
+  - **Leitor de EAN:** "Código" na Lista → digitar EAN inexistente → "produto
+    não cadastrado" → "Vincular a produto existente" grava o `barcode`; com o
+    catálogo online ligado, "Buscar dados online" consulta Supabase→OFF, baixa a
+    foto (data URI), abre o `ProductForm` pré-preenchido; ao salvar,
+    `contributeEan` faz POST só-texto ao Supabase. `BarcodeScanner` abre o portal
+    de câmera em Produtos/ProductForm (cai no aviso de permissão quando a câmera
+    não é liberada).
 
-**Falta na Fase 4 (dívida pequena, não bloqueante):**
-- Os agentes criaram `icons.tsx` locais em várias features (`Pin`, `Funnel`,
-  `Chevron`, `Alert`, `Share`) — consolidar em `ui/icons.tsx`.
+**Fase 4/5 — dívida quitada:**
+- Os `icons.tsx` locais das features foram consolidados em `ui/icons.tsx`
+  (`alert`, `share`, `pin`, `funnel`, `chevron` + `flag`/`save` novos).
+- O shell (`App.tsx`/`routes.tsx`) agora passa `onNavigate` a toda tela — o
+  botão "Ver histórico" de Registrar e do Modo Compra funciona.
+
+**Dívida pequena restante (não bloqueante):**
 - `PurchaseForm` edita a compra por "delete + recreate", o que troca o uid da
   compra. Funciona, mas seria mais limpo com `update`.
-
-**Fase 5 — próxima:** Modo Compra (`features/buy-mode/`) e o leitor de código de
-barras (`features/barcode/`: `BarcodeScanner`, `BarcodeLookup`, `AvisoCamera`)
-ligado às integrações de EAN que já existem (`integrations/eanCatalog.ts`).
 
 **Pendente de você:**
 - Autorizar o `git push --force` para `uni9aluno/mercado` (só necessário na

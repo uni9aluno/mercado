@@ -10,6 +10,7 @@ import {
   useDerived,
   usePriceIndex,
   useProducts,
+  useSetting,
   useShoppingItems,
 } from "@/hooks";
 import { repos } from "@/data";
@@ -20,9 +21,11 @@ import {
   LIGHT_DOT,
   priceFor,
 } from "@/domain/priceIndex";
+import { BarcodeLookup, type BarcodePrefill } from "@/features/barcode";
+import { contributeEan } from "@/integrations/eanCatalog";
 import { Btn, Dica, Empty, Icon, Modal, SearchBox, Thumb } from "@/ui";
 import { fmt, norm } from "@/lib/text";
-import type { Product } from "@/db/types";
+import type { EanCatalogSettings, Product } from "@/db/types";
 import { ProductForm } from "./ProductForm";
 
 export function Products() {
@@ -31,12 +34,15 @@ export function Products() {
   const { priceIndex } = usePriceIndex();
   const { rules } = useDerived();
   const shoppingItems = useShoppingItems();
+  const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
 
   const [busca, setBusca] = useState("");
   const buscaAtrasada = useDebounced(busca, 180);
   const [categoria, setCategoria] = useState("");
   const [editando, setEditando] = useState<Product | null>(null);
+  const [prefill, setPrefill] = useState<BarcodePrefill | null>(null);
   const [aberto, setAberto] = useState(false);
+  const [lookup, setLookup] = useState(false);
 
   // grupos por categoria, ordenados; produtos ordenados por nome (pt-BR).
   const grupos = useMemo(() => {
@@ -60,15 +66,18 @@ export function Products() {
 
   function abrirNovo() {
     setEditando(null);
+    setPrefill(null);
     setAberto(true);
   }
   function abrirEdicao(p: Product) {
     setEditando(p);
+    setPrefill(null);
     setAberto(true);
   }
   function fechar() {
     setAberto(false);
     setEditando(null);
+    setPrefill(null);
   }
 
   async function salvar(saved: Product) {
@@ -77,6 +86,20 @@ export function Products() {
       await repos.products.update(editando.id, campos);
     } else {
       await repos.products.create(campos);
+      // Cadastro novo (inclusive vindo de "Buscar dados online"): alimenta o
+      // catálogo compartilhado quando o usuário optou por contribuir.
+      if (eanCatalog && campos.barcode) {
+        await contributeEan(
+          {
+            barcode: campos.barcode,
+            name: campos.name,
+            brand: campos.brand,
+            packageSize: campos.packageSize,
+            packageUnit: campos.packageUnit ?? "",
+          },
+          eanCatalog,
+        );
+      }
     }
     fechar();
   }
@@ -95,10 +118,16 @@ export function Products() {
     <div className="fade-in">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-        <Btn onClick={abrirNovo}>
-          <Icon.plus size={16} />
-          Novo
-        </Btn>
+        <div className="flex gap-2">
+          <Btn variant="secondary" onClick={() => setLookup(true)}>
+            <Icon.search size={16} />
+            Código
+          </Btn>
+          <Btn onClick={abrirNovo}>
+            <Icon.plus size={16} />
+            Novo
+          </Btn>
+        </div>
       </div>
 
       <Dica
@@ -188,12 +217,30 @@ export function Products() {
         title={editando ? "Editar produto" : "Novo produto"}
       >
         <ProductForm
-          key={editando ? editando.id : "novo"}
-          product={editando ?? undefined}
+          key={editando ? editando.id : prefill ? "prefill" : "novo"}
+          product={editando ?? prefill ?? undefined}
           onSave={salvar}
           onDelete={editando ? excluir : undefined}
         />
       </Modal>
+
+      {lookup && (
+        <BarcodeLookup
+          title="Consultar código"
+          actionLabel="Abrir produto"
+          onClose={() => setLookup(false)}
+          onUse={(p) => {
+            setLookup(false);
+            abrirEdicao(p);
+          }}
+          onCreate={(pf) => {
+            setLookup(false);
+            setEditando(null);
+            setPrefill(pf);
+            setAberto(true);
+          }}
+        />
+      )}
     </div>
   );
 }

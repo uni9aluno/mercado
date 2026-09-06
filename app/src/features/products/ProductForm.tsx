@@ -8,6 +8,8 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useCategories, useMaps, usePriceIndex, usePurchaseItems } from "@/hooks";
 import { buildSeries } from "@/domain/compare";
+import { normalizarCodigo } from "@/domain/barcode";
+import { BarcodeScanner } from "@/features/barcode";
 import { Btn, Icon, Input, PriceSpark, Select, Thumb } from "@/ui";
 import { fmt, norm } from "@/lib/text";
 import { FREQUENCIES, PKG_UNITS, UNITS } from "@/lib/constants";
@@ -59,7 +61,6 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
     ...(product ?? {}),
     image: product?.image ?? null,
   });
-  // Fase 5: `scan` volta a controlar o <BarcodeScanner> real (outro agente).
   const [scan, setScan] = useState(false);
 
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
@@ -166,17 +167,20 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
           type="button"
           variant="secondary"
           className="mb-3"
-          onClick={() => {
-            setScan(true);
-            alert("O leitor de câmera entra na Fase 5.");
-            setScan(false);
-          }}
+          onClick={() => setScan(true)}
         >
           Escanear código
         </Btn>
       </div>
-      {/* Fase 5: trocar por <BarcodeScanner> — outro agente entrega o componente real. */}
-      {scan && null}
+      {scan && (
+        <BarcodeScanner
+          onClose={() => setScan(false)}
+          onDetected={(code) => {
+            setScan(false);
+            set("barcode", normalizarCodigo(code));
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Input
