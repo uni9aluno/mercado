@@ -12,8 +12,22 @@ check_*.js
 final_audit.js
 serve.js
 
-# Config local do Claude Code (preferências da máquina)
-.claude/settings.local.json
+# Docs de processo / IA e o app antigo — ficam só locais, fora do GitHub.
+.claude/
+AGENTES.md
+AGENTS.md
+CLAUDE.md
+HANDOFF.md
+STATUS_ONDA3.md
+melhorias.md
+Screenshot_*.png
+MercadoDoCasal.html
+manifest.json
+sw.js
+/index.html
+app/PORTING.md
+app/REESCRITA.md
+app/docs/FASE6.md
 
 # Sistema
 Thumbs.db
