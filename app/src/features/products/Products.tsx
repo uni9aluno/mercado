@@ -144,7 +144,7 @@ export function Products() {
           "Excluir um produto tira ele das listas, mas o histórico de compras dele é mantido.",
           ...(comConta
             ? [
-                "“Catálogo” abre o catálogo de todos os usuários: adicionar copia o produto para os seus, sem preços. Seus produtos também são publicados lá (sem preços), o que pode ser desligado em Config.",
+                "“Catálogo” mostra os produtos de todos os usuários: adicionar copia o produto e a foto para os seus, sem preços. Seus produtos e fotos também aparecem lá para todos; preços e compras nunca.",
               ]
             : []),
         ]}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Category, NewProduct } from "@/db/types";
+import { caminhoFoto } from "./fotos";
 import {
+  assinaturaItem,
   chaveProduto,
   itemDoProduto,
   pendentesDePublicacao,
@@ -83,10 +85,30 @@ describe("produtoDoItem", () => {
 describe("pendentesDePublicacao", () => {
   it("pula já publicados e repetidos", () => {
     const outro = { ...base, name: "Café", brand: "Melitta" };
-    const publicadas = new Set([chaveProduto(outro)]);
+    const publicadas = new Set([assinaturaItem(itemDoProduto(outro)!)]);
     const r = pendentesDePublicacao([base, { ...base }, outro], publicadas);
     expect(r).toHaveLength(1);
     expect(r[0].name).toBe("Arroz Tio João");
+  });
+});
+
+describe("foto no catálogo", () => {
+  const FOTO = "data:image/webp;base64,AAAA";
+
+  it("publica o caminho só de foto já enviada ao Storage", () => {
+    const enviada = { ...base, id: "p1", image: FOTO, imagePath: caminhoFoto("u", "p1", FOTO) };
+    expect(itemDoProduto(enviada)!.photo_path).toBe(enviada.imagePath);
+    expect(
+      itemDoProduto({ ...base, id: "p1", image: FOTO, imagePath: null })!.photo_path,
+    ).toBeNull();
+  });
+
+  it("produto que ganhou foto volta a ser publicado", () => {
+    const semFoto = { ...base, id: "p1" };
+    const publicadas = new Set([assinaturaItem(itemDoProduto(semFoto)!)]);
+    const comFoto = { ...semFoto, image: FOTO, imagePath: caminhoFoto("u", "p1", FOTO) };
+    expect(pendentesDePublicacao([semFoto], publicadas)).toHaveLength(0);
+    expect(pendentesDePublicacao([comFoto], publicadas)).toHaveLength(1);
   });
 });
 

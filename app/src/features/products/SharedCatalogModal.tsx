@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { repos } from "@/data";
 import { chaveProduto, produtoDoItem, type ItemCatalogo } from "@/domain/sharedCatalog";
 import { useCategories, useDebounced, useProducts } from "@/hooks";
+import { baixarFoto, urlsDeFotos } from "@/integrations/fotosStorage";
+import { blobParaDataUri } from "@/integrations/image";
 import { buscarCatalogo, LIMITE_BUSCA } from "@/integrations/sharedCatalog";
-import { Btn, Modal, SearchBox } from "@/ui";
+import { Btn, Modal, SearchBox, Thumb } from "@/ui";
 
 /**
- * "Catálogo de todos": produtos publicados por qualquer conta. Adicionar copia
- * o item para os produtos desta conta (sem preços); a partir daí ele é só seu.
+ * "Catálogo de todos": produtos de todas as contas. Adicionar copia o item e a
+ * foto para os produtos desta conta (sem preços); a partir daí ele é só seu, e
+ * a sincronização de fotos guarda uma cópia na pasta deste usuário.
  */
 export function SharedCatalogModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const products = useProducts();
@@ -18,6 +21,7 @@ export function SharedCatalogModal({ open, onClose }: { open: boolean; onClose: 
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [adicionados, setAdicionados] = useState<Set<string>>(new Set());
+  const [fotos, setFotos] = useState<Map<string, string>>(new Map());
 
   const meus = useMemo(() => new Set(products.map((p) => chaveProduto(p))), [products]);
 
@@ -27,7 +31,14 @@ export function SharedCatalogModal({ open, onClose }: { open: boolean; onClose: 
     setCarregando(true);
     setErro(null);
     buscarCatalogo(termo)
-      .then((r) => vivo && setItens(r))
+      .then(async (r) => {
+        if (!vivo) return;
+        setItens(r);
+        // URLs temporárias para as fotos (bucket privado); sem foto, fica a inicial.
+        const caminhos = r.map((i) => i.photo_path).filter((c): c is string => !!c);
+        const mapa = await urlsDeFotos(caminhos).catch(() => new Map<string, string>());
+        if (vivo) setFotos(mapa);
+      })
       .catch(
         (e: Error) =>
           vivo &&
@@ -42,7 +53,14 @@ export function SharedCatalogModal({ open, onClose }: { open: boolean; onClose: 
   }, [open, termo]);
 
   async function adicionar(item: ItemCatalogo) {
-    await repos.products.create(produtoDoItem(item, categories));
+    const novo = produtoDoItem(item, categories);
+    if (item.photo_path) {
+      // Foto é opcional: se não baixar, o produto entra sem ela.
+      novo.image = await baixarFoto(item.photo_path)
+        .then(blobParaDataUri)
+        .catch(() => null);
+    }
+    await repos.products.create(novo);
     setAdicionados((s) => new Set(s).add(item.chave));
   }
 
@@ -74,6 +92,7 @@ export function SharedCatalogModal({ open, onClose }: { open: boolean; onClose: 
           const jaTem = meus.has(i.chave) || adicionados.has(i.chave);
           return (
             <li key={i.chave} className="flex items-center gap-3 py-2">
+              <Thumb src={i.photo_path ? fotos.get(i.photo_path) : null} nome={i.name} size={40} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium text-gray-900">{i.name}</div>
                 <div className="truncate text-xs text-gray-500">

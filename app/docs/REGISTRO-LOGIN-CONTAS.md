@@ -24,6 +24,8 @@ configuração (passo a passo no Supabase) fica em
 | 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
 | 7 | "Deixe no repositório do GitHub apenas o que for necessário: api, keys etc. Se não necessário, deixe local" | URL e chave do Supabase saem do repositório e passam a vir dos secrets do GitHub; identificadores do projeto removidos da documentação (seção 4.6). |
 | 8 | "Coloque a opção de tirar uma foto também, pois atualmente só existe a opção de selecionar uma foto já existente na galeria" | Cadastro de produto com dois botões: "Tirar foto" (abre a câmera no celular) e "Galeria". |
+| 9 | "Obs: as fotos também vão para o banco no formato mais recomendado" | Fotos como arquivo WebP no Supabase Storage (bucket privado, pasta por usuário); o snapshot leva só o caminho (seção 4.7). |
+| 10 | "Todos produtos adicionados, independente do usuário, podem ser visualizados por todos usuários" | Publicação no catálogo de todos passa a ser obrigatória e inclui a foto (seção 4.7). |
 | 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
@@ -109,6 +111,32 @@ e invalidaria cópias existentes, por isso não foi feito. A chave publishable �
 pública por desenho (vai no JavaScript do site), então o risco é baixo. Para tirá-la
 de circulação mesmo assim: no Supabase, criar uma nova publishable key, colocá-la no
 secret `SUPABASE_ANON_KEY`, rodar o deploy e desativar a antiga.
+
+### 4.7 Fotos no Storage e catálogo obrigatório (pedidos 9 e 10)
+
+| Antes | Agora |
+|---|---|
+| Foto em data URI JPEG de 200 px, embutida no snapshot da conta (texto base64 dentro do jsonb, ~33% maior, contando para o limite de 20 MB e reenviada a cada sincronização) | Arquivo WebP de até 400 px no Supabase Storage (bucket privado `product-photos`, pasta por usuário); o produto guarda o caminho e o aparelho mantém uma cópia para uso offline |
+| Arquivo de entrada limitado a 3 MB (foto da câmera do celular era descartada em silêncio) | Até 25 MB na entrada; o que é guardado fica na casa de dezenas de KB |
+| Publicação no catálogo de todos opcional, sem foto | Obrigatória: todo produto de qualquer conta é visível para todos, com foto. Preços, mercados, listas e compras continuam privados. |
+
+Decisões:
+
+- **Storage em vez de coluna `bytea`/base64:** é o formato recomendado pelo Supabase
+  para arquivos; não pesa no banco nem no snapshot e pode ser servido com cache.
+- **Nome do arquivo com hash da foto:** o conteúdo de um caminho nunca muda, o que
+  permite cache longo e torna trivial saber se a foto atual já foi enviada.
+- **Leitura para qualquer conectado, escrita só na própria pasta:** necessário para
+  o catálogo de todos mostrar as fotos; ninguém altera a foto de outro.
+- **Copiar do catálogo gera cópia na pasta de quem copiou:** cada conta é dona das
+  próprias fotos e pode apagá-las sem afetar outra.
+- **Risco aceito:** fotos tiradas pela câmera ficam visíveis para todos os usuários.
+  A Config avisa para enquadrar só a embalagem.
+
+Validação: regras do bucket testadas no banco real (pasta própria aceita, alheia
+recusada, outro usuário lê mas não altera, anônimo não vê; transação desfeita) e
+fluxo completo no navegador com Supabase simulado (upload WebP, snapshot só com o
+caminho, `photo_path` publicado no catálogo). 187 testes.
 
 ### 4.3 Regras de reconciliação no login
 
@@ -368,3 +396,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Merge do PR #2; nova versão no ar. Origem do Pages segue em "Deploy from a branch" (pendência 6). |
 | 23/10/2026 | Troca do Pages comprovada no push do PR #3. Chave e URL do Supabase movidas para secrets do GitHub (seção 4.6). |
 | 23/10/2026 | Cadastro de produto: botões "Tirar foto" e "Galeria" (pedido 8). |
+| 23/10/2026 | Fotos no Supabase Storage (WebP) e catálogo de todos obrigatório, com foto (pedidos 9 e 10, seção 4.7). |

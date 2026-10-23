@@ -103,6 +103,10 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
       comparisonGroup: str(form.comparisonGroup).trim() || null,
       preferredStoreId: (form.preferredStoreId || null) as Id | null,
       image: form.image ?? null,
+      // Foto trocada ou removida: o caminho antigo deixa de valer e a sincronização
+      // de fotos envia a nova (ou apaga a antiga).
+      imagePath:
+        form.image && form.image === product?.image ? (product?.imagePath ?? null) : null,
     };
     onSave(saved);
   }

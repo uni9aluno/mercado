@@ -130,6 +130,20 @@ Com login, o catálogo EAN usa este mesmo projeto. Rode também
 [`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql).
 Só usuários autenticados leem e contribuem; nenhuma conta apaga linhas pelo app.
 
+### Fotos de produto
+
+Com login, cada foto é guardada como **arquivo** no Supabase Storage, no bucket
+privado `product-photos`, numa pasta por usuário (`<usuário>/<produto>-<hash>.webp`).
+Migração: [`supabase/migrations/20261023030000_product_photos.sql`](../supabase/migrations/20261023030000_product_photos.sql).
+
+| Ponto | Como funciona |
+|---|---|
+| Formato | WebP (JPEG onde o navegador não gera WebP), lado máximo de 400 px, qualidade 0,8: dezenas de KB por foto. Limite do bucket: 1 MB. |
+| Acesso | Qualquer usuário conectado lê (as fotos aparecem no catálogo de todos); cada um só envia, troca ou apaga na própria pasta. Anônimo não vê nada. |
+| Snapshot da conta | Leva só o caminho da foto já enviada. Foto ainda não enviada continua no snapshot até subir, para não se perder. |
+| Outros aparelhos | Baixam as fotos que ainda não têm. |
+| Limpeza | Arquivos da pasta do usuário que nenhum produto usa são apagados, exceto os referenciados por itens que ele publicou no catálogo de todos. |
+
 ### Catálogo de todos
 
 O catálogo de produtos comum a todos os usuários usa a tabela da migração

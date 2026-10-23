@@ -9,6 +9,7 @@
 
 import type { BackupDump } from "@/data/types";
 import { BACKUP_VERSION, buildBackup, type BackupObject } from "@/domain/backup";
+import { fotoSincronizada } from "@/domain/fotos";
 
 const TABELAS = [
   "categories",
@@ -24,8 +25,30 @@ const TABELAS = [
 /** Limite espelhado no CHECK da tabela; evita mandar um payload que o banco recusaria. */
 export const LIMITE_SNAPSHOT_BYTES = 20 * 1024 * 1024;
 
+/**
+ * Foto já enviada ao Storage não viaja no snapshot: vai só o caminho, e cada
+ * aparelho baixa o arquivo. Foto ainda não enviada continua inline, para não se
+ * perder se o aparelho sair do ar antes do envio.
+ */
 export function montarSnapshot(dump: BackupDump): BackupObject {
-  return buildBackup(dump);
+  const products = dump.products.map((p) => (fotoSincronizada(p) ? { ...p, image: null } : p));
+  return buildBackup({ ...dump, products });
+}
+
+/**
+ * Ao aplicar dados da nuvem, mantém a cópia local da foto quando o caminho no
+ * Storage é o mesmo: evita baixar de novo o que o aparelho já tem.
+ */
+export function preservarFotosLocais(
+  dump: BackupDump,
+  locais: { uid: string; image?: string | null; imagePath?: string | null }[],
+): BackupDump {
+  const porId = new Map(locais.filter((l) => l.image && l.imagePath).map((l) => [l.uid, l]));
+  const products = dump.products.map((p) => {
+    const local = porId.get(p.uid);
+    return !p.image && local && p.imagePath === local.imagePath ? { ...p, image: local.image } : p;
+  });
+  return { ...dump, products };
 }
 
 /** Lança se `dado` não for um snapshot v3 com as 8 tabelas em array. */

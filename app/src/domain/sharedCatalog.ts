@@ -1,13 +1,15 @@
 // ===========================================================================
 //  Catálogo de todos — regras puras (sem rede, sem Dexie).
 //
-//  Cada conta publica os SEUS produtos numa tabela única (`shared_products`),
-//  visível para todos os usuários conectados, e pode trazer itens de lá para o
-//  próprio cadastro. Só dados de produto trafegam: nunca preço, preço-alvo,
-//  mercado preferido, foto ou histórico — isso é da conta, não do catálogo.
+//  Todo produto cadastrado por qualquer conta é publicado numa tabela única
+//  (`shared_products`), visível para todos os usuários conectados, que podem
+//  trazer itens de lá para o próprio cadastro. Vão os dados do produto e o
+//  caminho da foto no Storage; nunca preço, preço-alvo, mercado preferido ou
+//  histórico — isso é da conta, não do catálogo.
 // ===========================================================================
 
 import type { Category, Frequency, NewProduct, PackageUnit, Product } from "@/db/types";
+import { fotoSincronizada } from "@/domain/fotos";
 import { FREQUENCIES, PKG_UNITS } from "@/lib/constants";
 import { norm } from "@/lib/text";
 
@@ -24,6 +26,8 @@ export interface ItemCatalogo {
   package_unit: string | null;
   frequency: string | null;
   barcode: string | null;
+  /** caminho da foto no Storage (pasta de quem publicou), ou null. */
+  photo_path: string | null;
 }
 
 const limpa = (s: unknown, max: number): string =>
@@ -70,7 +74,14 @@ export function itemDoProduto(p: Product | NewProduct): ItemCatalogo | null {
     package_unit: limpa(p.packageUnit, 10) || null,
     frequency: limpa(p.frequency, 20) || null,
     barcode: barcode && barcode.length <= 14 ? barcode : null,
+    // Só foto já enviada ao Storage; a ainda pendente entra na próxima publicação.
+    photo_path: fotoSincronizada(p) ? (p.imagePath ?? null) : null,
   };
+}
+
+/** identidade + foto: muda quando o produto ganha ou troca de foto, pedindo nova publicação. */
+export function assinaturaItem(item: ItemCatalogo): string {
+  return item.chave + "|" + (item.photo_path ?? "");
 }
 
 /** item do catálogo → produto novo da conta. Preços ficam vazios: são de cada um. */
@@ -99,7 +110,7 @@ export function produtoDoItem(item: ItemCatalogo, categorias: Category[]): NewPr
   };
 }
 
-/** produtos ainda não publicados por este aparelho, sem chaves repetidas. */
+/** produtos ainda não publicados por este aparelho (ou com foto nova), sem chaves repetidas. */
 export function pendentesDePublicacao(
   produtos: (Product | NewProduct)[],
   publicadas: Set<string>,
@@ -108,7 +119,7 @@ export function pendentesDePublicacao(
   const out: ItemCatalogo[] = [];
   for (const p of produtos) {
     const item = itemDoProduto(p);
-    if (!item || publicadas.has(item.chave) || vistos.has(item.chave)) continue;
+    if (!item || publicadas.has(assinaturaItem(item)) || vistos.has(item.chave)) continue;
     vistos.add(item.chave);
     out.push(item);
   }

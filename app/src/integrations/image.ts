@@ -1,14 +1,17 @@
-// Redimensionamento de imagem para a foto do produto (data URI JPEG, lado máx.
-// 200 px). Usado pelo ProductForm (arquivo escolhido pelo usuário) e, na Fase 5,
+// Redimensionamento de imagem para a foto do produto (data URI WebP, ou JPEG
+// onde o navegador não gera WebP; lado máx. 400 px). Usado pelo ProductForm (arquivo escolhido pelo usuário) e, na Fase 5,
 // pelo fluxo de EAN (imagem baixada da Open Food Facts).
 //
 // Sem dependências: `createImageBitmap` + <canvas>. Qualquer erro devolve `null`
 // — a foto é opcional e nunca deve derrubar o salvamento.
 
-const LADO_MAX = 200;
-const TAMANHO_MAX_BYTES = 3 * 1024 * 1024; // 3 MB
+const LADO_MAX = 400;
+// Limite do ARQUIVO de entrada, antes de reduzir. Foto da câmera do celular passa
+// fácil de 3 MB; o que sai daqui fica na casa de dezenas de KB.
+const TAMANHO_MAX_BYTES = 25 * 1024 * 1024;
+const QUALIDADE = 0.8;
 
-/** desenha o bitmap reescalado (lado máx. 200 px) e devolve o data URI JPEG. */
+/** desenha o bitmap reescalado e devolve o data URI (WebP; JPEG como reserva). */
 function bitmapParaDataUri(bmp: ImageBitmap): string | null {
   try {
     const escala = Math.min(1, LADO_MAX / Math.max(bmp.width, bmp.height));
@@ -20,7 +23,9 @@ function bitmapParaDataUri(bmp: ImageBitmap): string | null {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     ctx.drawImage(bmp, 0, 0, w, h);
-    return canvas.toDataURL("image/jpeg", 0.8);
+    // Navegador sem codificador WebP devolve PNG em silêncio: aí cai para JPEG.
+    const webp = canvas.toDataURL("image/webp", QUALIDADE);
+    return webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", QUALIDADE);
   } catch {
     return null;
   } finally {
@@ -28,7 +33,7 @@ function bitmapParaDataUri(bmp: ImageBitmap): string | null {
   }
 }
 
-/** arquivo local → data URI JPEG ~200 px. Rejeita > 3 MB. Erro → null. */
+/** arquivo local → data URI reduzido. Rejeita > 25 MB. Erro → null. */
 export async function fileToDataUri(file: File): Promise<string | null> {
   try {
     if (!file || file.size > TAMANHO_MAX_BYTES) return null;
@@ -51,4 +56,28 @@ export async function fetchImageDataUri(url: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** data URI → Blob, para enviar ao Storage como arquivo binário. */
+export function dataUriParaBlob(uri: string): Blob | null {
+  const m = /^data:(image\/(?:webp|jpeg|png));base64,(.+)$/.exec(uri);
+  if (!m) return null;
+  try {
+    const bin = atob(m[2]);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: m[1] });
+  } catch {
+    return null;
+  }
+}
+
+/** Blob baixado do Storage → data URI, para exibir e guardar no aparelho. */
+export function blobParaDataUri(blob: Blob): Promise<string | null> {
+  return new Promise((resolve) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(typeof leitor.result === "string" ? leitor.result : null);
+    leitor.onerror = () => resolve(null);
+    leitor.readAsDataURL(blob);
+  });
 }
