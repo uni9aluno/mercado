@@ -23,6 +23,7 @@ configuração (passo a passo no Supabase) fica em
 | 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
 | 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
 | 7 | "Deixe no repositório do GitHub apenas o que for necessário: api, keys etc. Se não necessário, deixe local" | URL e chave do Supabase saem do repositório e passam a vir dos secrets do GitHub; identificadores do projeto removidos da documentação (seção 4.6). |
+| 8 | "Coloque a opção de tirar uma foto também, pois atualmente só existe a opção de selecionar uma foto já existente na galeria" | Cadastro de produto com dois botões: "Tirar foto" (abre a câmera no celular) e "Galeria". |
 | 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
@@ -366,3 +367,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | URLs do Auth configuradas pelo usuário e verificadas (seção 7). |
 | 23/10/2026 | Merge do PR #2; nova versão no ar. Origem do Pages segue em "Deploy from a branch" (pendência 6). |
 | 23/10/2026 | Troca do Pages comprovada no push do PR #3. Chave e URL do Supabase movidas para secrets do GitHub (seção 4.6). |
+| 23/10/2026 | Cadastro de produto: botões "Tirar foto" e "Galeria" (pedido 8). |

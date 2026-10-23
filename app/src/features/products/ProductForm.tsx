@@ -41,6 +41,9 @@ interface Props {
   onDelete?: () => void;
 }
 
+const BOTAO_FOTO =
+  "inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200";
+
 /** "" / null → null; senão Number. */
 function num(v: unknown): number | null {
   return v === "" || v == null ? null : Number(v);
@@ -110,19 +113,37 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
       <div className="mb-4 flex items-center gap-3">
         <Thumb src={form.image ?? null} nome={str(form.name)} size={64} />
         <div className="flex flex-col gap-2">
-          <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">
-            <Icon.camera size={16} />
-            Trocar foto
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                void trocarFoto(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          {/* Duas entradas: `capture` abre a câmera direto no celular (no computador,
+              vira um seletor de arquivo comum); a outra abre a galeria. */}
+          <div className="flex gap-2">
+            <label className={BOTAO_FOTO}>
+              <Icon.camera size={16} />
+              Tirar foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(e) => {
+                  void trocarFoto(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className={BOTAO_FOTO}>
+              <Icon.image size={16} />
+              Galeria
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  void trocarFoto(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
           {form.image != null && (
             <Btn type="button" variant="danger" onClick={() => set("image", null)}>
               Remover foto
