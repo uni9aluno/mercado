@@ -7,9 +7,9 @@ configuração (passo a passo no Supabase) fica em
 | Item | Valor |
 |---|---|
 | Branch | `claude/login-page-supabase-589o0b` |
-| Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) |
+| Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Código pronto. SQL aplicado e validado no projeto real. Build de produção apontando para o projeto e testado contra o Auth real. Faltam: URLs de redirecionamento no painel do Auth (sem ferramenta no conector), backup JSON nos aparelhos e o merge. |
+| Situação | Login no ar desde 23/10/2026. Faltam as URLs de redirecionamento no painel do Auth e a origem do GitHub Pages; nenhuma das duas tem ferramenta disponível nesta sessão (seção 7). |
 
 ---
 
@@ -21,6 +21,7 @@ configuração (passo a passo no Supabase) fica em
 | 2 | "Documente o que você está fazendo e o que foi solicitado. Tudo no repositório" | Este arquivo, além de [CONTAS.md](CONTAS.md), do SQL versionado e das notas no README. |
 | 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
 | 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
+| 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
 > só locais, via `.gitignore`). Este registro vai para o repositório porque o
@@ -104,6 +105,19 @@ configuração (passo a passo no Supabase) fica em
 
 "Cópia" é uma entrada em **Config → Backups automáticos**, restaurável pela tela.
 
+### 4.4 Configuração ajustada ao modo com conta (pedido 5)
+
+| Ponto da tela | Antes | Agora, com conta |
+|---|---|---|
+| Painel "Dados" | "Os dados ficam neste navegador… o backup JSON leva a base de um aparelho para o outro" | Explica que os dados são sincronizados com a conta e que o backup JSON é cópia extra. "Último backup" vira "Último backup baixado", sem destaque de alerta. |
+| "Apagar todos os dados" | Apagava o banco local; com conta, a próxima sincronização podia trazer tudo de volta da nuvem ou espalhar o vazio, conforme o momento | "Apagar todos os dados da conta": confirmação explícita (neste e nos outros aparelhos; para só este aparelho, use "Sair"), exige conexão, recomeça do catálogo inicial e grava na nuvem sobrescrevendo a revisão atual. Coberto por teste. |
+| "Restaurar backup" | "Substitui todos os dados atuais" | Avisa que substitui os dados da conta, também nos outros aparelhos. |
+| Backups automáticos | "Não substituem o backup baixado" | Explica que guardam também a versão local substituída em conflito e que são apagados ao sair. |
+| Catálogo EAN | Pedia URL e anon key de um Supabase opcional | Usa o projeto da conta com o token da sessão; sem campos de URL/chave. Tabela restrita a usuários autenticados. |
+| Alerta "faça backup" no Início | Aparecia sempre que o último backup tinha mais de 7 dias (ou nunca) | Some com a conta: a nuvem é a cópia principal. |
+
+No modo local (build sem Supabase), tudo continua como antes.
+
 ---
 
 ## 5. Validação executada
@@ -156,6 +170,34 @@ Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 1
 sincronização com uma conta real. Não criei conta no seu projeto: isso enviaria
 e-mail e deixaria um usuário de teste em produção.
 
+### 5.3 Catálogo EAN no projeto da conta (23/10/2026)
+
+Migração `app/supabase/migrations/20261023010000_ean_catalog_conta.sql`, aplicada pelo
+conector (sem `drop`, para não travar na confirmação de comando destrutivo).
+
+| Verificação | Resultado |
+|---|---|
+| Objetos | Tabela `ean_catalog` com RLS; policies `conectado le`, `conectado insere`, `conectado atualiza`; sem `delete`. |
+| Upsert autenticado (duas gravações do mesmo EAN) | Segunda gravação atualiza a primeira. |
+| EAN com letras | Recusado pelo CHECK. |
+| Acesso anônimo | Bloqueado. |
+| Resíduo do teste | Nenhum (0 linhas, 0 usuários de teste). |
+| Advisors de segurança | Nenhum alerta. |
+
+### 5.4 Incidente: site publicado mostrando o README (23/10/2026)
+
+Logo após o merge, `https://uni9aluno.github.io/mercado/` passou a exibir o README
+renderizado, não o app.
+
+- **Causa (anterior a este trabalho):** o GitHub Pages está com a origem "Deploy from
+  a branch", e o repositório também tem o workflow "Deploy PWA". A cada push na
+  `main`, as duas publicações rodam e **vence a que termina por último**. Neste push,
+  a do README terminou 9 s depois. Em 12/09 o app venceu por acaso.
+- **Correção imediata:** o workflow "Deploy PWA" foi disparado de novo manualmente e o
+  app voltou ao ar (bundle com o projeto Supabase confirmado no endereço publicado).
+- **Correção definitiva (pendência 6, seção 7):** trocar a origem do Pages para
+  "GitHub Actions". Sem isso, qualquer push futuro pode tirar o app do ar de novo.
+
 ---
 
 ## 6. Riscos e limitações
@@ -168,6 +210,8 @@ e-mail e deixaria um usuário de teste em produção.
 | Sair sem internet | Alterações não enviadas são perdidas | Aviso e confirmação antes de sair |
 | Cadastro aberto | Terceiros podem criar conta (sem ver dados alheios, por causa do RLS) | Desligar "Allow new users to sign up" depois de criar as contas |
 | E-mail padrão do Supabase | Limite baixo de envios por hora | Configurar SMTP próprio |
+| Duas publicações concorrentes no GitHub Pages | Um push pode trocar o app pelo README | Pendência 6 da seção 7 |
+| Catálogo EAN compartilhado entre todas as contas do projeto | Uma conta pode gravar um nome errado para um código | Só usuários autenticados escrevem; sem exclusão pelo app; correção pelo Table Editor |
 
 ---
 
@@ -176,8 +220,10 @@ e-mail e deixaria um usuário de teste em produção.
 Responsável: dono do projeto Supabase e do repositório.
 
 1. ~~Rodar o SQL (seção 4.1)~~ **Feito em 23/10/2026** (seção 5.1).
-2. **Painel do Supabase → Authentication → URL Configuration** (só pelo painel; o
-   conector não tem ferramenta para isso):
+2. **Painel do Supabase → Authentication → URL Configuration.** Continua pendente. O
+   usuário pediu que eu fizesse (pedido 5), mas nesta sessão não há ferramenta para
+   isso: o conector do Supabase não altera configurações do Auth e o conector do
+   Chrome não está disponível. Precisa ser feito no painel:
    - Site URL = `https://uni9aluno.github.io/mercado/`
    - Redirect URLs: adicionar `https://uni9aluno.github.io/mercado/`
 
@@ -192,6 +238,10 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
+6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions".**
+   Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
+   disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
+   de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
 
 ### Decisão registrada: merge antes da configuração de URLs (23/10/2026)
 
@@ -227,3 +277,5 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Projeto Supabase reativado; SQL aplicado e validado pelo conector (seção 5.1). |
 | 23/10/2026 | Build de produção configurado em `app/.env.production`; testado contra o Auth real (seção 5.2). |
 | 23/10/2026 | Merge do PR #1 na `main` por decisão do usuário, antes da configuração de URLs (seção 7). |
+| 23/10/2026 | Incidente do Pages (README no lugar do app) corrigido com novo deploy; causa registrada (seção 5.4). |
+| 23/10/2026 | Config ajustada ao modo com conta e catálogo EAN no projeto da conta (seções 4.4 e 5.3). |

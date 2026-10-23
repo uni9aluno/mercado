@@ -33,6 +33,8 @@ export interface DashboardInput {
   budget: { vrva: number; extra: number; total: number };
   rules: { vrvaExpiryDay?: number };
   backupAt: string | null;
+  /** dados sincronizados com a conta: a nuvem é a cópia, o alerta de backup some. */
+  nuvem?: boolean;
   /** "agora" — injetado para testabilidade. O componente passa `new Date()`. */
   agora: Date;
   /** mês corrente "YYYY-MM" — o componente passa `today().slice(0,7)`. */
@@ -87,6 +89,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
     budget,
     rules,
     backupAt,
+    nuvem,
     agora,
     mes,
   } = inp;
@@ -175,7 +178,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
   }
 
   const bd = daysSince(backupAt);
-  if (bd == null || bd >= 7) {
+  if (!nuvem && (bd == null || bd >= 7)) {
     alertas.push({
       t: "warn",
       m:

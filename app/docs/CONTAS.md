@@ -120,6 +120,12 @@ npm run dev
 
 ---
 
+### Catálogo de códigos de barras
+
+Com login, o catálogo EAN usa este mesmo projeto. Rode também
+[`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql).
+Só usuários autenticados leem e contribuem; nenhuma conta apaga linhas pelo app.
+
 ## 5. Primeiro acesso de quem já usa o app
 
 1. Faça um **backup JSON** em Config antes de publicar a versão com login

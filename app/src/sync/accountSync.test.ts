@@ -196,6 +196,30 @@ describe("accountSync", () => {
     expect(estado().pendente).toBe(false);
   });
 
+  it("apagar dados da conta: substitui a nuvem pelo catálogo inicial, sem conflito", async () => {
+    servidor.set("u1", { revision: 3, data: snapshotRemoto(["Feira local"]) });
+    armazenamento.set(
+      "mercado.conta.v1",
+      JSON.stringify({ dono: U1, revisao: 3, pendente: false, ultimaSync: null }),
+    );
+    await sync.reconciliar(U1);
+    sync.iniciar(U1, false);
+    // outro aparelho gravou depois: o apagar precisa vencer mesmo assim
+    servidor.set("u1", { revision: 5, data: snapshotRemoto(["Outro aparelho"]) });
+    await db.autoBackups.add({ uid: "a9", date: 1, data: "{}" });
+
+    await sync.apagarDadosDaConta();
+
+    const linha = servidor.get("u1")!;
+    expect(linha.revision).toBe(6);
+    const nomes = (linha.data as { stores: { name: string }[] }).stores.map((x) => x.name);
+    expect(nomes).not.toContain("Feira local");
+    expect(nomes).not.toContain("Outro aparelho");
+    expect((linha.data as { products: unknown[] }).products.length).toBeGreaterThan(0);
+    expect(await db.autoBackups.count()).toBe(0);
+    expect(estado()).toMatchObject({ revisao: 6, pendente: false });
+  });
+
   it("encerrar sessão apaga base e estado da conta", async () => {
     await sync.reconciliar(U1);
     await sync.encerrarSessao();

@@ -54,6 +54,7 @@ function makeInput(over: Partial<DashboardInput> = {}): DashboardInput {
     rules: over.rules ?? { vrvaExpiryDay: 30 },
     // "backupAt" in over -> respeita o valor mesmo se for null (backup nunca feito)
     backupAt: "backupAt" in over ? (over.backupAt ?? null) : new Date().toISOString(),
+    nuvem: over.nuvem,
     agora: over.agora ?? new Date(2026, 8, 6, 10, 0, 0),
     mes: over.mes ?? "2026-09",
   };
@@ -215,6 +216,11 @@ describe("computeDashboard — alertas (ordem e conteúdo)", () => {
     expect(bk).toBeDefined();
     expect(bk!.goLabel).toBe("Fazer backup agora");
     expect(bk!.m).toContain("ainda não fez nenhum backup");
+  });
+
+  it("com conta sincronizada (nuvem), não há alerta de backup", () => {
+    const r = computeDashboard(makeInput({ backupAt: null, nuvem: true }));
+    expect(r.alertas.find((x) => x.go === "settings")).toBeUndefined();
   });
 
   it("backup antigo (>= 7 dias) -> warn com contagem de dias", () => {

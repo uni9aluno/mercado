@@ -10,11 +10,18 @@
 //  erro/404/config incompleta vira `null` (ou no-op), nunca exceção que suba
 //  pra tela.
 //
+//  Com login (build com Supabase), o catálogo usa o MESMO projeto da conta: URL
+//  e chave vêm do build, e as requisições levam o token da sessão. A tabela, nesse
+//  caso, só aceita usuários autenticados. URL/chave digitadas na Config valem
+//  apenas no modo local, sem login.
+//
 //  IMPORTANTE: a foto NÃO é baixada aqui. `image` sai sempre `null`; o que sai
 //  é `imageUrl` — a URL crua da capa (Supabase `image_url` ou OFF
 //  `image_front_small_url`). Quem baixa e redimensiona é o BarcodeLookup, via
 //  `@/integrations/image`. Só texto trafega — e só texto é contribuído de volta.
 // ===========================================================================
+
+import { authEnabled, credenciaisConta, supabase } from "./supabase";
 
 export interface EanCatalogConfig {
   /** Versão opcional para migrar preferências salvas por versões antigas do app. */
@@ -88,12 +95,38 @@ async function fetchComTimeout(url: string, init?: RequestInit): Promise<Respons
   }
 }
 
-/** headers do PostgREST: a mesma anon key vai em `apikey` e no Bearer. */
-function supabaseHeaders(anonKey: string): Record<string, string> {
-  return { apikey: anonKey, Authorization: "Bearer " + anonKey };
+interface Destino {
+  base: string;
+  headers: Record<string, string>;
 }
 
-function temConfigSupabase(cfg: EanCatalogConfig): boolean {
+/**
+ * Para onde vão as chamadas do catálogo. Com login: projeto da conta + token da
+ * sessão (null sem sessão). Sem login: URL e anon key da Config, com a mesma
+ * chave em `apikey` e no Bearer.
+ */
+async function destinoSupabase(cfg: EanCatalogConfig): Promise<Destino | null> {
+  if (authEnabled) {
+    const conta = credenciaisConta();
+    const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+    const token = data.session?.access_token;
+    if (!conta || !token) return null;
+    return {
+      base: conta.url,
+      headers: { apikey: conta.anonKey, Authorization: "Bearer " + token },
+    };
+  }
+  if (!temConfigSupabase(cfg)) return null;
+  const chave = cfg.anonKey.trim();
+  return {
+    base: cfg.url.trim().replace(/\/+$/, ""),
+    headers: { apikey: chave, Authorization: "Bearer " + chave },
+  };
+}
+
+/** true quando há catálogo Supabase utilizável: o da conta ou URL+chave da Config. */
+export function temConfigSupabase(cfg: EanCatalogConfig): boolean {
+  if (authEnabled) return true;
   return !!(cfg.url && cfg.url.trim() && cfg.anonKey && cfg.anonKey.trim());
 }
 
@@ -141,10 +174,11 @@ export async function lookupEan(ean: string, cfg: EanCatalogConfig): Promise<Ean
   if (!codigo) return null;
 
   // ---- 1. Supabase ----
-  if (cfg.enabled && temConfigSupabase(cfg)) {
-    const base = cfg.url.trim().replace(/\/+$/, "");
-    const url = base + "/rest/v1/ean_catalog?ean=eq." + encodeURIComponent(codigo) + "&select=*";
-    const res = await fetchComTimeout(url, { headers: supabaseHeaders(cfg.anonKey) });
+  const destino = cfg.enabled ? await destinoSupabase(cfg) : null;
+  if (destino) {
+    const url =
+      destino.base + "/rest/v1/ean_catalog?ean=eq." + encodeURIComponent(codigo) + "&select=*";
+    const res = await fetchComTimeout(url, { headers: destino.headers });
     if (res && res.ok) {
       const linhas = (await res.json().catch(() => null)) as SupabaseRow[] | null;
       const linha = Array.isArray(linhas) ? linhas[0] : null;
@@ -209,17 +243,17 @@ export interface ContribRecord {
  */
 export async function contributeEan(rec: ContribRecord, cfg: EanCatalogConfig): Promise<void> {
   if (!(cfg.enabled && cfg.contribute && rec.barcode)) return;
-  if (!temConfigSupabase(cfg)) return;
 
   const codigo = String(rec.barcode).replace(/\D/g, "");
   if (!codigo) return;
 
   try {
-    const base = cfg.url.trim().replace(/\/+$/, "");
-    await fetchComTimeout(base + "/rest/v1/ean_catalog", {
+    const destino = await destinoSupabase(cfg);
+    if (!destino) return;
+    await fetchComTimeout(destino.base + "/rest/v1/ean_catalog", {
       method: "POST",
       headers: {
-        ...supabaseHeaders(cfg.anonKey),
+        ...destino.headers,
         "Content-Type": "application/json",
         Prefer: "resolution=merge-duplicates",
       },
@@ -239,18 +273,22 @@ export async function contributeEan(rec: ContribRecord, cfg: EanCatalogConfig): 
 
 /**
  * Testa a conexão com o Supabase: um GET mínimo em `ean_catalog?limit=1`.
- * Usado pelo botão "Testar Supabase" da tela Config.
+ * Usado pelo botão "Testar" da tela Config. Com login, ignora URL/chave e testa
+ * o catálogo da conta.
  */
 export async function testarConexao(
   url: string,
   anonKey: string,
 ): Promise<{ ok: boolean; msg: string }> {
-  if (!url || !url.trim() || !anonKey || !anonKey.trim()) {
+  if (!authEnabled && (!url || !url.trim() || !anonKey || !anonKey.trim())) {
     return { ok: false, msg: "Preencha a URL e a chave antes de testar." };
   }
-  const base = url.trim().replace(/\/+$/, "");
-  const res = await fetchComTimeout(base + "/rest/v1/ean_catalog?limit=1", {
-    headers: supabaseHeaders(anonKey),
+  const destino = await destinoSupabase({ ...DEFAULT_EAN_CONFIG, url, anonKey });
+  if (!destino) {
+    return { ok: false, msg: "Sessão expirada. Saia e entre novamente na conta." };
+  }
+  const res = await fetchComTimeout(destino.base + "/rest/v1/ean_catalog?limit=1", {
+    headers: destino.headers,
   });
   if (!res) {
     return { ok: false, msg: "Sem resposta (tempo esgotado ou rede indisponível)." };
