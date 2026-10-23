@@ -1,0 +1,160 @@
+# Registro: login por conta e dados no Supabase
+
+Registro do que foi pedido, do que foi decidido e do que foi feito. O guia de
+configuração (passo a passo no Supabase e no GitHub) fica em
+[CONTAS.md](CONTAS.md).
+
+| Item | Valor |
+|---|---|
+| Branch | `claude/login-page-supabase-589o0b` |
+| Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) (rascunho) |
+| Data | 23/10/2026 |
+| Situação | Código pronto e testado com Supabase simulado. Falta ativar num projeto Supabase real. |
+
+---
+
+## 1. Solicitações
+
+| # | Pedido (texto original) | Como foi atendido |
+|---|---|---|
+| 1 | "Quero criar uma página login para cada usuário com senha individual, e armazenar os dados de cada conta no supabase" | Tela de login com Supabase Auth (e-mail + senha por pessoa) e sincronização da base do app com a tabela `account_data`, uma linha por conta, protegida por RLS. |
+| 2 | "Documente o que você está fazendo e o que foi solicitado. Tudo no repositório" | Este arquivo, além de [CONTAS.md](CONTAS.md), do SQL versionado e das notas no README. |
+
+> O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
+> só locais, via `.gitignore`). Este registro vai para o repositório porque o
+> pedido 2 diz isso explicitamente. O nome do arquivo não está no `.gitignore`.
+
+---
+
+## 2. Ponto de partida
+
+- O app é uma PWA (Vite + React + TypeScript) **local-first**: tudo fica no
+  IndexedDB (`MercadoDB`, via Dexie), sem login e sem servidor.
+- A camada Repository (`src/data/`) já previa um sync futuro, e o backup JSON
+  v3 (`src/domain/backup.ts`) já serializava a base inteira.
+- O Supabase já era usado, de forma opcional, só para o catálogo de EAN
+  (`docs/SUPABASE.md`), com URL e chave digitadas na Config e sem login.
+
+---
+
+## 3. Decisões e trade-offs
+
+| Decisão | Alternativa descartada | Motivo |
+|---|---|---|
+| **Supabase Auth** com e-mail e senha | Tabela própria de usuários e senhas | O Auth já faz hash (bcrypt), confirmação de e-mail, redefinição de senha, limite de tentativas e renovação de sessão. Implementar isso à mão traria risco de segurança sem ganho nenhum. |
+| E-mail como identificador | Nome de usuário | É o modelo nativo do Supabase Auth e permite recuperar a senha. |
+| **Snapshot por conta** (base inteira em jsonb) | Sincronizar registro a registro, com uma tabela por entidade | Reaproveita o formato do backup v3 e não mexe nas telas nem no Dexie. Custo: edições simultâneas em dois aparelhos da mesma conta não são mescladas (ver seção 6). |
+| IndexedDB continua sendo a base de trabalho | Ler e gravar direto no Supabase | Mantém o app funcionando offline, que é requisito central da PWA. |
+| Controle otimista por `revision` (RPC `save_account_data`) | "Último que gravar vence" sem checagem | Impede que um aparelho sobrescreva sem perceber a gravação de outro. O conflito é detectado e a versão local vira cópia. |
+| Credenciais no build (`VITE_SUPABASE_*`) | Digitar URL e chave na tela, como no EAN | O login precisa existir antes de qualquer tela. Sem as variáveis, o app segue no modo local (nada quebra para quem não configurar). |
+| Variáveis do GitHub (não secrets) | Secrets | A anon key é pública por desenho e vai no JavaScript. Quem protege os dados é o RLS. |
+| Fluxo `implicit` nos links de e-mail | PKCE | Com PKCE, o link precisa ser aberto no mesmo navegador que o pediu, o que quebra o PWA instalado no iOS. O token vem no fragmento (`#`) da URL, que não é enviado a servidor. |
+| Cadastro aberto por padrão | Cadastro fechado | Sem cadastro aberto, a primeira conta não pode ser criada pelo app. O guia explica como fechar depois de criar as contas do casal. |
+
+---
+
+## 4. O que foi feito
+
+### 4.1 Banco (Supabase)
+
+`app/supabase/migrations/20261023000000_account_data.sql` (idempotente):
+
+- Tabela `account_data`: `user_id` (PK, FK para `auth.users` com `on delete cascade`),
+  `data jsonb`, `revision`, `updated_at`; CHECK de 20 MB e de objeto JSON.
+- RLS ligado: `select`, `insert` e `update` só quando `auth.uid() = user_id`. Sem
+  acesso para `anon` e sem policy de `delete`.
+- Função `save_account_data(p_data, p_expected_revision)` com `SECURITY INVOKER`
+  e `search_path` vazio: grava só se a revisão bater; caso contrário devolve
+  `NULL` (conflito).
+
+### 4.2 App
+
+| Arquivo | Papel |
+|---|---|
+| `src/integrations/supabase.ts` | Cliente Supabase da conta; `authEnabled`; leitura do link de recuperação de senha e de erros do link. |
+| `src/features/auth/AuthGate.tsx` | Só libera o app depois de haver sessão **e** de a base local estar reconciliada com a conta. |
+| `src/features/auth/LoginPage.tsx` | Entrar / Criar conta / Esqueci minha senha. |
+| `src/features/auth/NewPasswordForm.tsx` | Nova senha (pelo link do e-mail e em Config). |
+| `src/features/auth/AccountPanel.tsx` | Painel "Conta" em Config: status, sincronizar, alterar senha, sair. |
+| `src/features/auth/authErrors.ts` | Mensagens em português; regra de senha (8+ caracteres, letras e números). |
+| `src/features/auth/SyncBadge.tsx`, `SyncNotice.tsx` | Indicador de sincronização no menu e aviso de conflito. |
+| `src/sync/reconcile.ts` | Decisão pura do que fazer no login (tabela abaixo). |
+| `src/sync/accountSync.ts` | Motor de sync: hooks do Dexie, debounce, envio, conflito, offline, saída. |
+| `src/sync/snapshot.ts` | Monta e valida o snapshot (formato do backup v3). |
+| `src/App.tsx` | Envolve o app no `AuthGate` quando `authEnabled`. |
+| `.github/workflows/deploy.yml` | Repassa `vars.SUPABASE_URL` e `vars.SUPABASE_ANON_KEY` ao build. |
+| `.env.example` | Modelo para testar localmente. |
+
+### 4.3 Regras de reconciliação no login
+
+| Base do aparelho | Conta na nuvem | Ação |
+|---|---|---|
+| Da própria conta, sem pendência | Mesma revisão | Nada |
+| Da própria conta, com pendência | Mesma revisão | Envia |
+| Da própria conta, sem pendência | Revisão mais nova | Baixa |
+| Da própria conta, com pendência | Revisão mais nova | Guarda cópia local e baixa (conflito) |
+| Sem dono (de antes do login) | Vazia | Adota: a base passa a ser da conta e é enviada |
+| Sem dono | Com dados | Guarda cópia local e baixa |
+| De outra conta | Vazia | Apaga a base e começa do zero |
+| De outra conta | Com dados | Apaga a base (sem cópia) e baixa |
+
+"Cópia" é uma entrada em **Config → Backups automáticos**, restaurável pela tela.
+
+---
+
+## 5. Validação executada
+
+| Verificação | Resultado |
+|---|---|
+| `npm run lint` | Sem avisos |
+| `npx tsc -b` | Sem erros |
+| `npm test` | 162 testes passando (26 novos: reconciliação, snapshot, senha e integração do sync com IndexedDB em memória e servidor simulado) |
+| `npm run build` | OK com e sem as variáveis do Supabase |
+| Playwright (Chromium) com Supabase simulado | Login, adoção da base (revisão 0 → 1), envio após o seed (1 → 2), painel Conta, saída limpando a base e o `localStorage` |
+
+**Não validado ainda:** execução do SQL num Postgres/Supabase real e o envio
+real de e-mails (confirmação e nova senha).
+
+---
+
+## 6. Riscos e limitações
+
+| Risco | Impacto | Mitigação |
+|---|---|---|
+| Edição simultânea na mesma conta em dois aparelhos | A gravação mais recente vence; a outra não é mesclada | A versão local vira cópia em Backups automáticos e o usuário é avisado |
+| Limite de 20 MB por conta | Envio recusado se passar | Aviso no app; fotos de produto são o principal peso |
+| Token de sessão no `localStorage` | Exposto em caso de XSS | O app não carrega scripts de terceiros; "Sair" encerra a sessão do aparelho |
+| Sair sem internet | Alterações não enviadas são perdidas | Aviso e confirmação antes de sair |
+| Cadastro aberto | Terceiros podem criar conta (sem ver dados alheios, por causa do RLS) | Desligar "Allow new users to sign up" depois de criar as contas |
+| E-mail padrão do Supabase | Limite baixo de envios por hora | Configurar SMTP próprio |
+
+---
+
+## 7. Pendências para ativar
+
+Responsável: dono do projeto Supabase e do repositório.
+
+1. Rodar o SQL (seção 4.1) no SQL Editor do Supabase.
+2. Authentication: Confirm email ligado, senha mínima 8+, Site URL e Redirect URLs
+   apontando para `https://uni9aluno.github.io/mercado/`.
+3. GitHub: criar as variáveis `SUPABASE_URL` e `SUPABASE_ANON_KEY` (chave `anon`,
+   nunca `service_role`).
+4. Fazer um backup JSON antes do primeiro deploy com login.
+5. Revisar e aprovar o PR #1; o merge na `main` dispara o deploy.
+
+## 8. Próximos passos possíveis (fora do escopo atual)
+
+- Sincronização registro a registro (tabela por entidade), para mesclar
+  edições simultâneas.
+- Base compartilhada entre duas contas (casal com logins separados vendo os
+  mesmos dados), com tabela de membros e RLS por grupo.
+- Login social (Google) e MFA.
+
+---
+
+## Histórico
+
+| Data | O que mudou |
+|---|---|
+| 23/10/2026 | Login, sincronização por conta, SQL, guia CONTAS.md e PR #1 (commit `dad4e0e`). |
+| 23/10/2026 | Este registro, a pedido do usuário. |

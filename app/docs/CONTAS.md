@@ -5,7 +5,8 @@ a própria conta (e-mail + senha individual) e os dados dela ficam guardados no
 Supabase, vinculados a essa conta. Sem a configuração, o app continua no modo
 local de sempre, sem login.
 
-Tempo estimado: 10 minutos.
+Tempo estimado: 10 minutos. O histórico do pedido e das decisões está em
+[REGISTRO-LOGIN-CONTAS.md](REGISTRO-LOGIN-CONTAS.md).
 
 ---
 
