@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) (rascunho) |
 | Data | 23/10/2026 |
-| Situação | Código pronto e testado com Supabase simulado. Falta ativar num projeto Supabase real. |
+| Situação | Código pronto. SQL aplicado e validado no projeto Supabase real. Faltam a configuração de Authentication, as variáveis no GitHub e o merge. |
 
 ---
 
@@ -19,6 +19,7 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 |---|---|---|
 | 1 | "Quero criar uma página login para cada usuário com senha individual, e armazenar os dados de cada conta no supabase" | Tela de login com Supabase Auth (e-mail + senha por pessoa) e sincronização da base do app com a tabela `account_data`, uma linha por conta, protegida por RLS. |
 | 2 | "Documente o que você está fazendo e o que foi solicitado. Tudo no repositório" | Este arquivo, além de [CONTAS.md](CONTAS.md), do SQL versionado e das notas no README. |
+| 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
 > só locais, via `.gitignore`). Este registro vai para o repositório porque o
@@ -112,8 +113,34 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | `npm run build` | OK com e sem as variáveis do Supabase |
 | Playwright (Chromium) com Supabase simulado | Login, adoção da base (revisão 0 → 1), envio após o seed (1 → 2), painel Conta, saída limpando a base e o `localStorage` |
 
-**Não validado ainda:** execução do SQL num Postgres/Supabase real e o envio
-real de e-mails (confirmação e nova senha).
+### 5.1 Aplicação no Supabase real (23/10/2026)
+
+Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 17).
+
+| Etapa | Resultado |
+|---|---|
+| Estado inicial | Projeto **pausado** (`INACTIVE`, pausa automática do plano gratuito). Foi reativado para aplicar o SQL. |
+| Schema `public` antes | Vazio. Nada foi sobrescrito (a tabela `ean_catalog` do catálogo opcional não existia). |
+| Aplicação | Conteúdo da migração aplicado em três blocos via `execute_sql`: tabela + RLS + permissões; policies; função + permissões. |
+| Objetos criados | Tabela `account_data` com RLS ligado; policies `dono le`, `dono insere`, `dono atualiza`; função `save_account_data`. |
+| Permissões | `anon` sem `select` na tabela e sem `execute` na função; `authenticated` com `execute`. |
+| Teste funcional (transação desfeita no fim) | 1ª gravação → revisão 1; 2ª com revisão correta → 2; 3ª com revisão desatualizada → `NULL` (conflito detectado); dono enxerga 1 linha; outro usuário enxerga 0; `anon` bloqueado. |
+| Resíduo do teste | Nenhum: 0 linhas em `account_data`, 0 usuários de teste em `auth.users`. |
+| Supabase Advisors (segurança e desempenho) | Nenhum alerta. |
+
+**Desvios do procedimento previsto**, registrados para quem repetir:
+
+- `apply_migration` do conector travou duas vezes por 60s, sem efeito no
+  banco. Por isso, a migração **não aparece** no histórico de migrações do
+  Supabase (`supabase_migrations`). O banco é a fonte de verdade; o arquivo SQL
+  no repositório continua idêntico ao que foi aplicado.
+- Os `drop policy if exists` do script foram omitidos: o conector trata `drop`
+  como destrutivo e fica esperando uma confirmação, o que causava o travamento.
+  Como a tabela era nova e não tinha policies, o resultado é idêntico. No SQL
+  Editor do painel, o script completo roda normalmente.
+
+**Não validado ainda:** login real pelo app publicado e envio de e-mails
+(confirmação e nova senha). Dependem das pendências 2 e 3 da seção 7.
 
 ---
 
@@ -134,7 +161,7 @@ real de e-mails (confirmação e nova senha).
 
 Responsável: dono do projeto Supabase e do repositório.
 
-1. Rodar o SQL (seção 4.1) no SQL Editor do Supabase.
+1. ~~Rodar o SQL (seção 4.1)~~ **Feito em 23/10/2026** (seção 5.1).
 2. Authentication: Confirm email ligado, senha mínima 8+, Site URL e Redirect URLs
    apontando para `https://uni9aluno.github.io/mercado/`.
 3. GitHub: criar as variáveis `SUPABASE_URL` e `SUPABASE_ANON_KEY` (chave `anon`,
@@ -158,3 +185,4 @@ Responsável: dono do projeto Supabase e do repositório.
 |---|---|
 | 23/10/2026 | Login, sincronização por conta, SQL, guia CONTAS.md e PR #1 (commit `dad4e0e`). |
 | 23/10/2026 | Este registro, a pedido do usuário. |
+| 23/10/2026 | Projeto Supabase reativado; SQL aplicado e validado pelo conector (seção 5.1). |
