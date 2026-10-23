@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Login no ar desde 23/10/2026. Faltam as URLs de redirecionamento no painel do Auth e a origem do GitHub Pages; nenhuma das duas tem ferramenta disponível nesta sessão (seção 7). |
+| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas; origem do Pages trocada pelo usuário, com comprovação no próximo push na `main` (seção 7). |
 
 ---
 
@@ -266,7 +266,7 @@ Testes unitários: chave, conversões, pendências e busca (`src/domain/sharedCa
 Responsável: dono do projeto Supabase e do repositório.
 
 1. ~~Rodar o SQL (seção 4.1)~~ **Feito em 23/10/2026** (seção 5.1).
-2. **Painel do Supabase → Authentication → URL Configuration.** Continua pendente. O
+2. ~~Painel do Supabase → Authentication → URL Configuration~~ **Feito pelo usuário e verificado em 23/10/2026** (ver abaixo). Registro anterior: o
    usuário pediu que eu fizesse (pedido 5), mas nesta sessão não há ferramenta para
    isso: o conector do Supabase não altera configurações do Auth e o conector do
    Chrome não está disponível. Precisa ser feito no painel:
@@ -284,10 +284,24 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
-6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions".**
+6. ~~GitHub → Settings → Pages → Source: "GitHub Actions"~~ **Trocado pelo usuário em 23/10/2026.** A API do Pages não é acessível desta sessão; a comprovação é o próximo push na `main` não disparar mais "pages build and deployment".
    Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
    disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
    de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
+
+### Verificação das URLs do Auth (23/10/2026)
+
+Teste sem criar conta nem enviar e-mail: chamada a `/auth/v1/verify` com um token de
+recuperação inválido, que faz o Auth redirecionar com o erro no fragmento da URL.
+
+| `redirect_to` pedido | Para onde o Auth mandou | Conclusão |
+|---|---|---|
+| `https://uni9aluno.github.io/mercado/` | `https://uni9aluno.github.io/mercado/#error=…otp_expired…` | Endereço do app está na lista de Redirect URLs |
+| endereço fora da lista | `https://uni9aluno.github.io/mercado#error=…` | Site URL aponta para o app; endereços não autorizados são recusados |
+
+O app trata `otp_expired` no retorno ("O link do e-mail expirou ou já foi usado").
+Com isso, a tabela de trade-off abaixo deixa de valer: confirmação de cadastro e
+"Esqueci minha senha" voltam ao app.
 
 ### Decisão registrada: merge antes da configuração de URLs (23/10/2026)
 
@@ -326,3 +340,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Incidente do Pages (README no lugar do app) corrigido com novo deploy; causa registrada (seção 5.4). |
 | 23/10/2026 | Config ajustada ao modo com conta e catálogo EAN no projeto da conta (seções 4.4 e 5.3). |
 | 23/10/2026 | Catálogo de todos: tabela, publicação automática, tela em Produtos e opção na Config (seções 4.5 e 5.5). |
+| 23/10/2026 | URLs do Auth e origem do Pages configuradas pelo usuário; URLs verificadas (seção 7). |
