@@ -95,14 +95,18 @@ describe("qtdDe / precoDe", () => {
   });
 
   it("precoExibicao: igual a precoDe, mas devolve null (não 0) sem preço nem estimativa", () => {
-    expect(precoExibicao(arroz, { s1: { marcado: false, quantity: 1, unitPrice: 7 } }, priceFn)).toBe(
-      7,
-    );
+    expect(
+      precoExibicao(arroz, { s1: { marcado: false, quantity: 1, unitPrice: 7 } }, priceFn),
+    ).toBe(7);
     expect(precoExibicao(arroz, {}, priceFn)).toBe(10); // estimativa
     expect(precoExibicao(item({ id: "z", productId: "nada" }), {}, priceFn)).toBeNull();
     // preço 0 explícito no carrinho é um valor, não "sem preço"
     expect(
-      precoExibicao(item({ id: "z", productId: "nada" }), { z: { marcado: false, quantity: 1, unitPrice: 0 } }, priceFn),
+      precoExibicao(
+        item({ id: "z", productId: "nada" }),
+        { z: { marcado: false, quantity: 1, unitPrice: 0 } },
+        priceFn,
+      ),
     ).toBe(0);
   });
 });

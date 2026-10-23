@@ -4,8 +4,24 @@ import { ensureListForOrphans, seedIfEmpty } from "@/db/seed";
 import { MOBILE_TABS, ROUTES } from "./routes";
 import { Boundary, Icon, Modal, UndoBar } from "@/ui";
 import { GlobalSearch } from "@/features/search/GlobalSearch";
+import { AuthGate } from "@/features/auth/AuthGate";
+import { useAuth } from "@/features/auth/AuthContext";
+import { SyncBadge } from "@/features/auth/SyncBadge";
+import { authEnabled } from "@/integrations/supabase";
 
+// Com Supabase no build, o login é obrigatório e o AuthGate reconcilia a base
+// local com a conta ANTES de o Shell abrir. Sem Supabase, segue o modo local.
 export default function App() {
+  if (!authEnabled) return <Shell />;
+  return (
+    <AuthGate>
+      <Shell />
+    </AuthGate>
+  );
+}
+
+function Shell() {
+  const auth = useAuth();
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [tab, setTab] = useState("dashboard");
@@ -71,6 +87,7 @@ export default function App() {
       {/* nav lateral — desktop */}
       <nav className="sticky top-4 hidden h-fit w-48 shrink-0 flex-col gap-1 md:flex">
         <div className="mb-2 px-3 text-lg font-bold text-emerald-700">Mercado do Casal</div>
+        {auth && <SyncBadge email={auth.conta.email} />}
         <button
           onClick={() => setBuscaAberta(true)}
           className="mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"

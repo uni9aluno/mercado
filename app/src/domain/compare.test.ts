@@ -12,8 +12,7 @@ import {
 } from "./compare";
 
 const DIA = 86_400_000;
-const recente = (dias: number) =>
-  new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
+const recente = (dias: number) => new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
 
 function prod(p: Partial<Product> & { id: string; name: string }): Product {
   return { category: "x", frequency: "30 dias", barcode: null, ...p };
@@ -68,15 +67,37 @@ describe("buildComparativos", () => {
     expect(arroz.diff).toBe(2);
   });
   it("pula produto com < 2 lojas (feijão)", () => {
-    const cmp = buildComparativos(priceIndex, productById, series, "recent", 0.05, new Set(), new Map());
+    const cmp = buildComparativos(
+      priceIndex,
+      productById,
+      series,
+      "recent",
+      0.05,
+      new Set(),
+      new Map(),
+    );
     expect(cmp.find((c) => c.prod.id === "feijao")).toBeUndefined();
   });
 });
 
 describe("compararCesta", () => {
   const itensLista: ShoppingItem[] = [
-    { id: "s1", productId: "arroz", status: "A comprar", priority: "Alta", listId: "L", quantity: 2 },
-    { id: "s2", productId: "feijao", status: "A comprar", priority: "Média", listId: "L", quantity: 1 },
+    {
+      id: "s1",
+      productId: "arroz",
+      status: "A comprar",
+      priority: "Alta",
+      listId: "L",
+      quantity: 2,
+    },
+    {
+      id: "s2",
+      productId: "feijao",
+      status: "A comprar",
+      priority: "Média",
+      listId: "L",
+      quantity: 1,
+    },
   ];
 
   it("uma loja: feijão sem preço na lojaB entra por estimativa global, nunca zero", () => {
@@ -97,7 +118,14 @@ describe("compararCesta", () => {
     // só feijão, e só lojaB (sem preço local do feijão em lojaB).
     // feijão TEM histórico global (last = 9 na lojaA) -> priceFor devolve 9.
     const soFeijao: ShoppingItem[] = [
-      { id: "s2", productId: "feijao", status: "A comprar", priority: "Média", listId: "L", quantity: 3 },
+      {
+        id: "s2",
+        productId: "feijao",
+        status: "A comprar",
+        priority: "Média",
+        listId: "L",
+        quantity: 3,
+      },
     ];
     const r = compararCesta(soFeijao, productById, priceIndex, ["lojaB"], "recent");
     expect(r.one?.total).toBe(27); // 9 (último global) * 3, jamais 0
@@ -109,7 +137,16 @@ describe("compararCesta", () => {
     const pbById = new Map(productById);
     pbById.set("novo", semNada);
     const r2 = compararCesta(
-      [{ id: "s9", productId: "novo", status: "A comprar", priority: "Média", listId: "L", quantity: 2 }],
+      [
+        {
+          id: "s9",
+          productId: "novo",
+          status: "A comprar",
+          priority: "Média",
+          listId: "L",
+          quantity: 2,
+        },
+      ],
       pbById,
       priceIndex,
       ["lojaA"],
@@ -136,7 +173,15 @@ describe("buildPerfilMercados (bug limite90 corrigido)", () => {
       ["lojaB", { id: "lojaB", name: "Feira" }],
     ]);
     const series = buildSeries(items, purchaseById);
-    const cmp = buildComparativos(priceIndex, productById, series, "recent", 0.05, new Set(), new Map());
+    const cmp = buildComparativos(
+      priceIndex,
+      productById,
+      series,
+      "recent",
+      0.05,
+      new Set(),
+      new Map(),
+    );
 
     // não deve lançar
     const perfil = buildPerfilMercados(purchases, cmp, storeById);
@@ -200,7 +245,10 @@ describe("buildGrupos (Comparar embalagens)", () => {
       packageUnit: "kg",
     });
     const pur = new Map<string, Purchase>([["p", { id: "p", date: recente(5), storeId: "s" }]]);
-    const idx = buildPriceIndex([{ id: "i", purchaseId: "p", productId: "solo", unitPrice: 10 }], pur);
+    const idx = buildPriceIndex(
+      [{ id: "i", purchaseId: "p", productId: "solo", unitPrice: 10 }],
+      pur,
+    );
     expect(buildGrupos([solo], idx, norm, "recent")).toHaveLength(0);
   });
 });

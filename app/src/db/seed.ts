@@ -1,11 +1,6 @@
 import { db } from "./schema";
 import { norm } from "@/lib/text";
-import {
-  LEGACY_PRODUCT_ID,
-  type Frequency,
-  type PackageUnit,
-  type ProductRow,
-} from "./types";
+import { LEGACY_PRODUCT_ID, type Frequency, type PackageUnit, type ProductRow } from "./types";
 
 // ===========================================================================
 //  SEED — dados iniciais transcritos do MercadoDoCasal.html (linha 361).
@@ -50,6 +45,8 @@ interface SeedProduct {
   tp: number | null;
 }
 
+// Tabela de dados: um registro por linha (prettier-ignore preserva o formato).
+// prettier-ignore
 export const SEED_PRODUCTS: SeedProduct[] = [
   { n: "Acém Moído", b: "", ps: null, pu: "kg", c: "Açougue & Proteínas", f: "30 dias", u: "kg", dp: 40, tp: null },
   { n: "Acém em peça", b: "", ps: null, pu: "kg", c: "Açougue & Proteínas", f: "30 dias", u: "kg", dp: 40, tp: null },
@@ -157,6 +154,8 @@ interface SeedHistory {
   notes: string;
 }
 
+// Tabela de dados: um registro por linha (prettier-ignore preserva o formato).
+// prettier-ignore
 export const SEED_HISTORY: SeedHistory[] = [
   { date: "2026-08-02", store: "Atacadão / Rota de Proteínas", product: "Compra consolidada", category: "Açougue & Proteínas", qty: 1, price: 300, payment: "VR / VA", type: "Planejada", notes: "Benefício VR/VA aplicado para proteínas" },
   { date: "2026-08-02", store: "Atacadão / Rota de Proteínas", product: "Compra consolidada", category: "Açougue & Proteínas", qty: 1, price: 125, payment: "Cartão de Débito", type: "Planejada", notes: "Complemento pago no débito" },

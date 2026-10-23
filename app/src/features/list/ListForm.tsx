@@ -7,12 +7,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { repos } from "@/data";
-import {
-  useMaps,
-  usePriceIndex,
-  usePurchaseData,
-  useShoppingByList,
-} from "@/hooks";
+import { useMaps, usePriceIndex, usePurchaseData, useShoppingByList } from "@/hooks";
 import {
   codificarLista,
   decodificarLista,
@@ -49,10 +44,7 @@ export function ListForm({ list, onClose, onSaved, onDelete }: Props) {
   const [mid, setMid] = useState(list && list.storeId != null ? list.storeId : "");
   const sug = useRef(list ? list.name : "");
 
-  const opts = useMemo(
-    () => stores.map((s) => ({ value: s.id, label: s.name })),
-    [stores],
-  );
+  const opts = useMemo(() => stores.map((s) => ({ value: s.id, label: s.name })), [stores]);
 
   const trocaMercado = (v: string) => {
     setMid(v);
@@ -283,28 +275,18 @@ export function ListForm({ list, onClose, onSaved, onDelete }: Props) {
           <div className="mb-2 text-sm font-medium text-gray-700">Clonar</div>
           <div className="flex gap-2">
             {list.storeId != null && (
-              <Btn
-                variant="secondary"
-                className="flex-1"
-                disabled={ocupado}
-                onClick={clonarCompra}
-              >
+              <Btn variant="secondary" className="flex-1" disabled={ocupado} onClick={clonarCompra}>
                 Clonar última compra
               </Btn>
             )}
-            <Btn
-              variant="secondary"
-              className="flex-1"
-              disabled={ocupado}
-              onClick={clonarParaNova}
-            >
+            <Btn variant="secondary" className="flex-1" disabled={ocupado} onClick={clonarParaNova}>
               Clonar para nova lista
             </Btn>
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            A cópia vira uma lista ativa nova; esta aqui fica como está. Item que o app calcula
-            que ainda tem em casa vem marcado com "talvez não precise" — mas continua na lista,
-            quem decide é você.
+            A cópia vira uma lista ativa nova; esta aqui fica como está. Item que o app calcula que
+            ainda tem em casa vem marcado com "talvez não precise" — mas continua na lista, quem
+            decide é você.
           </p>
         </div>
       )}
@@ -316,12 +298,7 @@ export function ListForm({ list, onClose, onSaved, onDelete }: Props) {
             Gera um código curto só com os itens pendentes. Quem receber cola no campo "Importar
             lista por código", aqui embaixo. Não leva preços nem histórico.
           </p>
-          <Btn
-            variant="secondary"
-            className="w-full"
-            disabled={ocupado}
-            onClick={gerarCodigo}
-          >
+          <Btn variant="secondary" className="w-full" disabled={ocupado} onClick={gerarCodigo}>
             Gerar código da lista
           </Btn>
           {codigo && (
@@ -367,11 +344,7 @@ export function ListForm({ list, onClose, onSaved, onDelete }: Props) {
           value={codImport}
           onChange={(e) => setCodImport(e.target.value)}
         />
-        <Btn
-          className="w-full"
-          disabled={ocupado || !codImport.trim()}
-          onClick={importarCodigo}
-        >
+        <Btn className="w-full" disabled={ocupado || !codImport.trim()} onClick={importarCodigo}>
           Importar lista
         </Btn>
       </div>

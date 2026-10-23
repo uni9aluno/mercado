@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeDashboard, textoRestante, type DashboardInput } from "./Dashboard.calc";
-import type {
-  Product,
-  Purchase,
-  PurchaseItem,
-  ShoppingItem,
-} from "@/db/types";
+import type { Product, Purchase, PurchaseItem, ShoppingItem } from "@/db/types";
 import type { PriceEntry } from "@/domain/priceIndex";
 
 const DIA = 86_400_000;
@@ -54,6 +49,7 @@ function makeInput(over: Partial<DashboardInput> = {}): DashboardInput {
     rules: over.rules ?? { vrvaExpiryDay: 30 },
     // "backupAt" in over -> respeita o valor mesmo se for null (backup nunca feito)
     backupAt: "backupAt" in over ? (over.backupAt ?? null) : new Date().toISOString(),
+    nuvem: over.nuvem,
     agora: over.agora ?? new Date(2026, 8, 6, 10, 0, 0),
     mes: over.mes ?? "2026-09",
   };
@@ -62,10 +58,31 @@ function makeInput(over: Partial<DashboardInput> = {}): DashboardInput {
 describe("computeDashboard — gastos do mês", () => {
   it("soma total, VR/VA vs outros e comprador, só do mês corrente", () => {
     const purchases: Purchase[] = [
-      { id: "a", date: "2026-09-02", storeId: null, total: 100, paymentMethod: "VR / VA", buyer: "ele" },
+      {
+        id: "a",
+        date: "2026-09-02",
+        storeId: null,
+        total: 100,
+        paymentMethod: "VR / VA",
+        buyer: "ele",
+      },
       { id: "b", date: "2026-09-10", storeId: null, total: 50, paymentMethod: "PIX", buyer: "ela" },
-      { id: "c", date: "2026-09-15", storeId: null, total: 30, paymentMethod: "VR / VA", buyer: "juntos" },
-      { id: "d", date: "2026-08-31", storeId: null, total: 999, paymentMethod: "VR / VA", buyer: "ele" },
+      {
+        id: "c",
+        date: "2026-09-15",
+        storeId: null,
+        total: 30,
+        paymentMethod: "VR / VA",
+        buyer: "juntos",
+      },
+      {
+        id: "d",
+        date: "2026-08-31",
+        storeId: null,
+        total: 999,
+        paymentMethod: "VR / VA",
+        buyer: "ele",
+      },
     ];
     const r = computeDashboard(makeInput({ purchases }));
     expect(r.gastoMes).toBe(180);
@@ -106,10 +123,38 @@ describe("computeDashboard — listas ativas", () => {
   it("só conta itens 'A comprar' de listas ativas; usa priceFor × quantity", () => {
     const products = [prod({ id: "1", defaultPrice: 8 }), prod({ id: "2" })];
     const shopping: ShoppingItem[] = [
-      { id: "s1", productId: "1", status: "A comprar", priority: "Média", listId: "L1", quantity: 2 },
-      { id: "s2", productId: "2", status: "A comprar", priority: "Média", listId: "L1", quantity: 1 },
-      { id: "s3", productId: "1", status: "Comprado", priority: "Média", listId: "L1", quantity: 5 },
-      { id: "s4", productId: "1", status: "A comprar", priority: "Média", listId: "LX", quantity: 9 },
+      {
+        id: "s1",
+        productId: "1",
+        status: "A comprar",
+        priority: "Média",
+        listId: "L1",
+        quantity: 2,
+      },
+      {
+        id: "s2",
+        productId: "2",
+        status: "A comprar",
+        priority: "Média",
+        listId: "L1",
+        quantity: 1,
+      },
+      {
+        id: "s3",
+        productId: "1",
+        status: "Comprado",
+        priority: "Média",
+        listId: "L1",
+        quantity: 5,
+      },
+      {
+        id: "s4",
+        productId: "1",
+        status: "A comprar",
+        priority: "Média",
+        listId: "LX",
+        quantity: 9,
+      },
     ];
     const r = computeDashboard(
       makeInput({
@@ -190,11 +235,16 @@ describe("computeDashboard — alertas (ordem e conteúdo)", () => {
   it("listas acima do orçamento -> warn, primeiro da fila", () => {
     const products = [prod({ id: "1", defaultPrice: 2000 })];
     const shopping: ShoppingItem[] = [
-      { id: "s1", productId: "1", status: "A comprar", priority: "Média", listId: "L1", quantity: 1 },
+      {
+        id: "s1",
+        productId: "1",
+        status: "A comprar",
+        priority: "Média",
+        listId: "L1",
+        quantity: 1,
+      },
     ];
-    const r = computeDashboard(
-      makeInput({ products, shopping, activeListIds: new Set(["L1"]) }),
-    );
+    const r = computeDashboard(makeInput({ products, shopping, activeListIds: new Set(["L1"]) }));
     expect(r.alertas[0].t).toBe("warn");
     expect(r.alertas[0].m).toContain("acima do orçamento");
   });
@@ -215,6 +265,11 @@ describe("computeDashboard — alertas (ordem e conteúdo)", () => {
     expect(bk).toBeDefined();
     expect(bk!.goLabel).toBe("Fazer backup agora");
     expect(bk!.m).toContain("ainda não fez nenhum backup");
+  });
+
+  it("com conta sincronizada (nuvem), não há alerta de backup", () => {
+    const r = computeDashboard(makeInput({ backupAt: null, nuvem: true }));
+    expect(r.alertas.find((x) => x.go === "settings")).toBeUndefined();
   });
 
   it("backup antigo (>= 7 dias) -> warn com contagem de dias", () => {
@@ -248,9 +303,7 @@ describe("computeDashboard — alertas (ordem e conteúdo)", () => {
     const purchases: Purchase[] = [
       { id: "a", date: "2026-09-02", storeId: null, total: 250, paymentMethod: "VR / VA" },
     ];
-    const r = computeDashboard(
-      makeInput({ purchases, agora: new Date(2026, 8, 28, 10, 0, 0) }),
-    );
+    const r = computeDashboard(makeInput({ purchases, agora: new Date(2026, 8, 28, 10, 0, 0) }));
     expect(r.alertas.some((x) => x.m.includes("de VR/VA"))).toBe(false);
   });
 });

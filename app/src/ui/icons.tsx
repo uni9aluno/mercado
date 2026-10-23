@@ -60,6 +60,13 @@ export const Icon = {
       <circle cx="12" cy="13" r="4" />
     </>,
   ),
+  image: wrap(
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </>,
+  ),
   search: wrap(
     <>
       <circle cx="11" cy="11" r="8" />

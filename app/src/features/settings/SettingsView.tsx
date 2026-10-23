@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { AccountPanel } from "@/features/auth/AccountPanel";
+import { useAuth } from "@/features/auth/AuthContext";
+import { apagarDadosDaConta } from "@/sync/accountSync";
 import { repos } from "@/data";
 import type { BudgetSettings, Priority, RulesSettings } from "@/db/types";
 import {
@@ -38,10 +41,15 @@ import { EanCatalogPanel } from "./EanCatalogPanel";
 import { exportarExcel, planejarImportProdutos } from "./excelActions";
 import { FileButton } from "./FileButton";
 import { Panel } from "./Panel";
+import { SharedCatalogPanel } from "./SharedCatalogPanel";
 
 const AVISO_MS = 2500;
 
 export function SettingsView() {
+  const auth = useAuth();
+  const alcanceRestaurar = auth
+    ? "Isso substitui TODOS os dados da sua conta, também nos outros aparelhos."
+    : "Isso substitui TODOS os dados atuais.";
   const products = useProducts();
   const stores = useStores();
   const categories = useCategories();
@@ -113,8 +121,14 @@ export function SettingsView() {
   useEffect(() => {
     recarregarAuto();
     try {
-      navigator.storage?.estimate?.().then((e) => setUso(e?.usage ?? null)).catch(() => {});
-      navigator.storage?.persisted?.().then(setProtegido).catch(() => {});
+      navigator.storage
+        ?.estimate?.()
+        .then((e) => setUso(e?.usage ?? null))
+        .catch(() => {});
+      navigator.storage
+        ?.persisted?.()
+        .then(setProtegido)
+        .catch(() => {});
     } catch {
       /* API indisponível */
     }
@@ -263,7 +277,7 @@ export function SettingsView() {
     const arquivo = e.target.files?.[0];
     e.target.value = "";
     if (!arquivo) return;
-    if (!window.confirm("Restaurar substitui TODOS os dados atuais. Continuar?")) return;
+    if (!window.confirm(alcanceRestaurar + " Continuar?")) return;
     const r = await restaurarDeTexto(await arquivo.text());
     if (r.ok) {
       flash("Backup restaurado.");
@@ -281,7 +295,8 @@ export function SettingsView() {
       !window.confirm(
         "Restaurar o backup automático de " +
           fmtWhen(new Date(auto.maisRecente).toISOString()) +
-          "? Isso substitui TODOS os dados atuais.",
+          "? " +
+          alcanceRestaurar,
       )
     ) {
       return;
@@ -326,6 +341,24 @@ export function SettingsView() {
   }
 
   async function apagarTudo() {
+    if (auth) {
+      if (
+        !window.confirm(
+          "Isto apaga TODOS os dados da sua conta, neste e nos outros aparelhos, e recomeça com o catálogo inicial.\n\n" +
+            "Para tirar os dados só deste aparelho, use “Sair” no painel Conta. Continuar?",
+        )
+      ) {
+        return;
+      }
+      if (!window.confirm("Confirma? A ação não pode ser desfeita.")) return;
+      try {
+        await apagarDadosDaConta();
+        location.reload();
+      } catch (e) {
+        flash((e as Error).message);
+      }
+      return;
+    }
     if (!window.confirm("Isto apaga TODOS os dados do app neste dispositivo. Continuar?")) return;
     if (!window.confirm("Confirma? A ação não pode ser desfeita.")) return;
     const { db } = await import("@/db/schema");
@@ -422,9 +455,7 @@ export function SettingsView() {
         qtd +
           " item(ns) importado(s)." +
           (plano.storeId
-            ? " Lista ligada ao mercado " +
-              (storeById.get(plano.storeId)?.name ?? "") +
-              "."
+            ? " Lista ligada ao mercado " + (storeById.get(plano.storeId)?.name ?? "") + "."
             : " A lista ficou sem mercado — escolha um no ⋯ da tela Lista, senão os itens não saem sozinhos quando você registrar a compra."),
       );
     } catch (e) {
@@ -437,7 +468,8 @@ export function SettingsView() {
   // -------------------------------------------------------------------------
 
   const backupAt = derived.backupAt;
-  const backupVelho = daysSince(backupAt) == null || (daysSince(backupAt) ?? 0) >= 7;
+  // Com conta, a nuvem é a cópia principal: backup antigo deixa de ser alerta.
+  const backupVelho = !auth && (daysSince(backupAt) == null || (daysSince(backupAt) ?? 0) >= 7);
 
   return (
     <div className="fade-in">
@@ -448,8 +480,12 @@ export function SettingsView() {
         itens={[
           "“Orçamento mensal” define o teto usado no Início: VR/VA mais o aporte em dinheiro.",
           "“Regras de preço” ajustam a tolerância (quanto acima do alvo ainda é aceitável) e o desconto usado para sugerir alvo em produtos sem alvo próprio.",
-          "Os dados ficam só neste navegador. O backup JSON é a única forma de levar a base para outro aparelho — use “Baixar backup completo” ou “Compartilhar backup”.",
-          "“Restaurar backup” substitui TODOS os dados atuais pelo arquivo escolhido. Não dá para desfazer.",
+          auth
+            ? "Os dados ficam neste aparelho e são sincronizados com a sua conta. O backup JSON continua útil como cópia extra, fora da nuvem."
+            : "Os dados ficam só neste navegador. O backup JSON é a única forma de levar a base para outro aparelho — use “Baixar backup completo” ou “Compartilhar backup”.",
+          auth
+            ? "“Restaurar backup” substitui TODOS os dados da conta pelo arquivo escolhido, também nos outros aparelhos. Não dá para desfazer."
+            : "“Restaurar backup” substitui TODOS os dados atuais pelo arquivo escolhido. Não dá para desfazer.",
           "O painel cinza mostra quando foi o último backup, o tamanho da base e se o navegador está protegendo os dados contra descarte.",
         ]}
       />
@@ -459,6 +495,8 @@ export function SettingsView() {
           {aviso}
         </div>
       )}
+
+      <AccountPanel />
 
       {/* ---- Orçamento mensal ---- */}
       <Panel title="Orçamento mensal">
@@ -487,7 +525,8 @@ export function SettingsView() {
           </label>
         </div>
         <p className="mb-3 text-sm text-gray-500">
-          Total: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+          Total:{" "}
+          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
             totalOrcamento,
           )}
         </p>
@@ -505,9 +544,7 @@ export function SettingsView() {
             max="100"
             step="1"
             value={Math.round(100 * rules.tolerance)}
-            onChange={(e) =>
-              setRules((r) => ({ ...r, tolerance: Number(e.target.value) / 100 }))
-            }
+            onChange={(e) => setRules((r) => ({ ...r, tolerance: Number(e.target.value) / 100 }))}
           />
         </label>
         <label className="mb-3 block">
@@ -624,12 +661,15 @@ export function SettingsView() {
       {/* ---- Dados ---- */}
       <Panel title="Dados">
         <p className="mb-3 text-xs text-gray-500">
-          Os dados ficam neste navegador. Limpar os dados do site apaga tudo, e cada aparelho tem
-          a sua própria cópia. O backup JSON é o que leva a base de um aparelho para o outro.
+          {auth
+            ? "Os dados ficam neste aparelho e são sincronizados com a sua conta: em outro aparelho, basta entrar com o mesmo e-mail. O backup JSON é uma cópia extra, fora da nuvem."
+            : "Os dados ficam neste navegador. Limpar os dados do site apaga tudo, e cada aparelho tem a sua própria cópia. O backup JSON é o que leva a base de um aparelho para o outro."}
         </p>
         <div className="mb-3 space-y-1.5 rounded-xl bg-gray-50 p-3 text-xs">
           <div className="flex justify-between gap-2">
-            <span className="text-gray-500">Último backup</span>
+            <span className="text-gray-500">
+              {auth ? "Último backup baixado" : "Último backup"}
+            </span>
             <span
               className={
                 "text-right font-medium " + (backupVelho ? "text-amber-700" : "text-gray-700")
@@ -686,7 +726,7 @@ export function SettingsView() {
           </FileButton>
           <Btn variant="danger" className="w-full" onClick={apagarTudo}>
             <Icon.trash size={16} />
-            Apagar todos os dados
+            {auth ? "Apagar todos os dados da conta" : "Apagar todos os dados"}
           </Btn>
         </div>
       </Panel>
@@ -694,9 +734,13 @@ export function SettingsView() {
       {/* ---- Backups automáticos ---- */}
       <Panel title="Backups automáticos">
         <p className="mb-3 text-xs text-gray-500">
-          O app guarda sozinho até {AUTO_MAX} cópias, no máximo uma por dia. Elas ficam neste
-          mesmo navegador e não substituem o backup baixado: se o aparelho quebrar ou você limpar
-          os dados do site, elas vão junto.
+          {auth
+            ? "O app guarda sozinho até " +
+              AUTO_MAX +
+              " cópias neste aparelho: uma por dia e, em caso de conflito entre aparelhos, a versão local que foi substituída pela da nuvem. Elas são apagadas ao sair da conta."
+            : "O app guarda sozinho até " +
+              AUTO_MAX +
+              " cópias, no máximo uma por dia. Elas ficam neste mesmo navegador e não substituem o backup baixado: se o aparelho quebrar ou você limpar os dados do site, elas vão junto."}
         </p>
         <div className="mb-3 space-y-1.5 rounded-xl bg-gray-50 p-3 text-xs">
           <div className="flex justify-between gap-2">
@@ -727,6 +771,9 @@ export function SettingsView() {
 
       {/* ---- Catálogo EAN (seção nova) ---- */}
       <EanCatalogPanel aviso={flash} />
+
+      {/* ---- Catálogo de todos (só com login) ---- */}
+      <SharedCatalogPanel aviso={flash} />
 
       {/* ---- Compartilhar / importar lista por código ---- */}
       <Panel title="Compartilhar / importar lista por código">

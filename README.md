@@ -38,7 +38,9 @@ Onde uma compra de verdade é lançada: data, mercado, forma de pagamento, quem 
 ### 🏷️ Produtos
 O catálogo de tudo que a casa costuma comprar: nome, marca, categoria, unidade, tamanho de embalagem, preço padrão e preço-alvo, e a frequência esperada de recompra (a cada quantos dias, em média, o produto costuma acabar). É esse cadastro que alimenta as listas de compras e o comparador de preços. Há também um campo **código de barras** e um **"Grupo comparável"** (para agrupar embalagens equivalentes no Comparador). O botão **"Consultar código"** procura um EAN no catálogo deste aparelho — se não achar, oferece cadastrar um produto novo ou vincular o código a um já existente.
 
-O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** funciona no endereço HTTPS ou no PWA instalado. Quando o EAN ainda não existe no aparelho, o app consulta automaticamente a API pública Open Food Facts v3, sem chave, e preenche nome, marca, tamanho e foto quando disponíveis. O Supabase é opcional e serve como catálogo compartilhado do casal para códigos que não existam na base pública. A foto fica apenas no aparelho. Ver **[app/docs/SUPABASE.md](app/docs/SUPABASE.md)** para configurar esse catálogo opcional.
+Com login, todo produto cadastrado por qualquer usuário fica visível para todos: o botão **Catálogo** abre o **catálogo de todos**, com foto, para copiar para os seus (sem preços). Preços, mercados, listas e compras continuam de cada conta. No cadastro, a foto pode ser **tirada na hora** ou escolhida na **galeria**.
+
+O código pode ser **digitado** em qualquer situação. A **leitura pela câmera** funciona no endereço HTTPS ou no PWA instalado. Quando o EAN ainda não existe no aparelho, o app consulta automaticamente a API pública Open Food Facts v3, sem chave, e preenche nome, marca, tamanho e foto quando disponíveis. Com login, o app também consulta (e, se você ligar "Contribuir", alimenta) um catálogo compartilhado no mesmo Supabase da conta, sem configuração extra; no modo local, sem login, esse catálogo é opcional e configurado à mão (ver **[app/docs/SUPABASE.md](app/docs/SUPABASE.md)**). Sem login, a foto fica apenas no aparelho; com login, ela é guardada como arquivo no Supabase Storage (ver [app/docs/CONTAS.md](app/docs/CONTAS.md)).
 
 ### 📊 Comparar
 A tela onde o histórico vira decisão de onde comprar. Tudo é calculado só com o que já foi registrado neste aparelho — nunca consulta preço na internet.
@@ -72,7 +74,7 @@ O backup agora carrega uma verificação interna: se o arquivo chegar corrompido
 
 ## Como os dados funcionam
 
-As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`) — não há login nem sincronização dos dados do casal. A consulta automática envia somente o EAN à Open Food Facts e pode baixar a foto pública do produto. Se o catálogo Supabase opcional for configurado, a contribuição envia apenas nome, marca e tamanho; nunca fotos ou dados pessoais.
+As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`). Quando o build é publicado com as variáveis do Supabase, o app passa a exigir **login com e-mail e senha individual**, e os dados de cada conta são enviados para o Supabase e baixados nos outros aparelhos em que a pessoa entrar — ver **[app/docs/CONTAS.md](app/docs/CONTAS.md)** (como configurar) e **[app/docs/REGISTRO-LOGIN-CONTAS.md](app/docs/REGISTRO-LOGIN-CONTAS.md)** (o que foi pedido, decidido e feito). Sem essa configuração, não há login nem sincronização. A consulta automática envia somente o EAN à Open Food Facts e pode baixar a foto pública do produto. Se o catálogo Supabase opcional for configurado, a contribuição envia apenas nome, marca e tamanho; nunca fotos ou dados pessoais.
 
 - **Funciona sem internet.** Depois da primeira abertura pelo endereço publicado, o PWA mantém o build em cache.
 - **Cada aparelho tem sua própria cópia.** Para levar os dados do celular para o computador (ou vice-versa), é preciso usar o **backup**: baixar o `.json` em um aparelho e restaurar no outro, em Config.
@@ -89,7 +91,17 @@ npm ci
 npm run dev
 ```
 
-O Vite mostra o endereço local. Os comandos `npm run lint`, `npm test` e `npm run build` fazem a validação completa.
+O Vite mostra o endereço local. Validação completa, a mesma que o CI roda em cada pull request:
+
+```powershell
+npm run format:check   # formatação (Prettier); `npm run format` corrige
+npm run lint           # ESLint, sem avisos tolerados
+npm run typecheck      # TypeScript
+npm test               # Vitest
+npm run build          # build de produção
+```
+
+O workflow **CI** verifica todo pull request antes do merge; o **Deploy PWA no GitHub Pages** publica a cada push na `main`. Commits só de formatação ficam em `.git-blame-ignore-revs` (`git config blame.ignoreRevsFile .git-blame-ignore-revs`).
 
 ### Instalar como aplicativo (PWA)
 
@@ -99,4 +111,3 @@ O passo a passo completo (publicar em HTTPS de graça, instalar no Android, inst
 
 ---
 
-*Para quem for mexer no código: veja [INSTALAR-PWA.md](INSTALAR-PWA.md) (instalação e deploy) e [app/docs/SUPABASE.md](app/docs/SUPABASE.md) (catálogo de EAN opcional).*

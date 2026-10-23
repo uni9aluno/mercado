@@ -4,8 +4,7 @@ import type { Product, ShoppingItem } from "@/db/types";
 import type { PriceEntry } from "@/domain/priceIndex";
 
 const DIA = 86_400_000;
-const isoAtras = (dias: number) =>
-  new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
+const isoAtras = (dias: number) => new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
 
 const prod = (frequency: Product["frequency"]): Product =>
   ({
@@ -16,8 +15,7 @@ const prod = (frequency: Product["frequency"]): Product =>
     barcode: null,
   }) as Product;
 
-const entry = (lastDate: string): PriceEntry =>
-  ({ last: 1, lastDate, count: 1 }) as PriceEntry;
+const entry = (lastDate: string): PriceEntry => ({ last: 1, lastDate, count: 1 }) as PriceEntry;
 
 describe("talvezTem", () => {
   it("0 sem produto, sem entry ou sem lastDate", () => {
@@ -50,8 +48,7 @@ const item = (
   productId: string,
   status: ShoppingItem["status"],
   id = productId + "-item",
-): ShoppingItem =>
-  ({ id, productId, status, priority: "Média", listId: "l1" }) as ShoppingItem;
+): ShoppingItem => ({ id, productId, status, priority: "Média", listId: "l1" }) as ShoppingItem;
 
 describe("acaoParaCodigo", () => {
   const p = (missingByStore?: Record<string, number>): Pick<Product, "id" | "missingByStore"> => ({
@@ -95,9 +92,7 @@ describe("rotuloAcaoCodigo", () => {
     expect(rotuloAcaoCodigo({ id: "p1" }, [item("p2", "A comprar")])).toBe("Adicionar à lista");
   });
   it('"Marcar como comprado" quando o produto está na lista', () => {
-    expect(rotuloAcaoCodigo({ id: "p1" }, [item("p1", "A comprar")])).toBe(
-      "Marcar como comprado",
-    );
+    expect(rotuloAcaoCodigo({ id: "p1" }, [item("p1", "A comprar")])).toBe("Marcar como comprado");
   });
   it("item cancelado não conta", () => {
     expect(rotuloAcaoCodigo({ id: "p1" }, [item("p1", "Cancelado")])).toBe("Adicionar à lista");

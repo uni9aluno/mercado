@@ -33,6 +33,8 @@ export interface DashboardInput {
   budget: { vrva: number; extra: number; total: number };
   rules: { vrvaExpiryDay?: number };
   backupAt: string | null;
+  /** dados sincronizados com a conta: a nuvem é a cópia, o alerta de backup some. */
+  nuvem?: boolean;
   /** "agora" — injetado para testabilidade. O componente passa `new Date()`. */
   agora: Date;
   /** mês corrente "YYYY-MM" — o componente passa `today().slice(0,7)`. */
@@ -87,6 +89,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
     budget,
     rules,
     backupAt,
+    nuvem,
     agora,
     mes,
   } = inp;
@@ -128,10 +131,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
     if (it.status !== "A comprar" || !activeListIds.has(it.listId)) continue;
     pendentes.add(it.productId);
     pendingCount++;
-    const preco = priceFor(
-      productById.get(it.productId),
-      priceIndex.get(it.productId),
-    );
+    const preco = priceFor(productById.get(it.productId), priceIndex.get(it.productId));
     if (preco) listTotal += (it.quantity || 1) * preco;
   }
 
@@ -158,12 +158,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
   if (listTotal > total) {
     alertas.push({
       t: "warn",
-      m:
-        "As listas ativas somam " +
-        fmt(listTotal) +
-        ", acima do orçamento de " +
-        fmt(total) +
-        ".",
+      m: "As listas ativas somam " + fmt(listTotal) + ", acima do orçamento de " + fmt(total) + ".",
     });
   }
 
@@ -175,7 +170,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
   }
 
   const bd = daysSince(backupAt);
-  if (bd == null || bd >= 7) {
+  if (!nuvem && (bd == null || bd >= 7)) {
     alertas.push({
       t: "warn",
       m:

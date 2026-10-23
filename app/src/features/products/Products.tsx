@@ -20,7 +20,9 @@ import { contributeEan } from "@/integrations/eanCatalog";
 import { Btn, Dica, Empty, Icon, Modal, SearchBox, Thumb } from "@/ui";
 import { fmt, norm } from "@/lib/text";
 import type { EanCatalogSettings, Product } from "@/db/types";
+import { useAuth } from "@/features/auth/AuthContext";
 import { ProductForm } from "./ProductForm";
+import { SharedCatalogModal } from "./SharedCatalogModal";
 
 export function Products() {
   const products = useProducts();
@@ -37,6 +39,8 @@ export function Products() {
   const [prefill, setPrefill] = useState<BarcodePrefill | null>(null);
   const [aberto, setAberto] = useState(false);
   const [lookup, setLookup] = useState(false);
+  const [catalogoAberto, setCatalogoAberto] = useState(false);
+  const comConta = useAuth() != null;
 
   // grupos por categoria, ordenados; produtos ordenados por nome (pt-BR).
   const grupos = useMemo(() => {
@@ -112,7 +116,13 @@ export function Products() {
     <div className="fade-in">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
+        <div className={"grid gap-2 sm:flex " + (comConta ? "grid-cols-3" : "grid-cols-2")}>
+          {comConta && (
+            <Btn variant="secondary" onClick={() => setCatalogoAberto(true)}>
+              <Icon.store size={16} />
+              Catálogo
+            </Btn>
+          )}
           <Btn variant="secondary" onClick={() => setLookup(true)}>
             <Icon.search size={16} />
             Código
@@ -132,6 +142,11 @@ export function Products() {
           "A bolinha à esquerda é o semáforo de preço: verde dentro do alvo, amarelo na tolerância, vermelho acima.",
           "A “frequência” é a cada quantos dias o produto costuma acabar — é ela que faz o produto aparecer em “Hora de repor”, no Início.",
           "Excluir um produto tira ele das listas, mas o histórico de compras dele é mantido.",
+          ...(comConta
+            ? [
+                "“Catálogo” mostra os produtos de todos os usuários: adicionar copia o produto e a foto para os seus, sem preços. Seus produtos e fotos também aparecem lá para todos; preços e compras nunca.",
+              ]
+            : []),
         ]}
       />
 
@@ -226,6 +241,10 @@ export function Products() {
             setAberto(true);
           }}
         />
+      )}
+
+      {comConta && (
+        <SharedCatalogModal open={catalogoAberto} onClose={() => setCatalogoAberto(false)} />
       )}
     </div>
   );

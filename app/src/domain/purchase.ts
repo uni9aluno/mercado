@@ -91,8 +91,7 @@ export async function registrarCompra(
       const todos = await repos.lists.allItems();
       const remover = todos
         .filter(
-          (it) =>
-            it.status === "A comprar" && alvo.has(it.listId) && comprados.has(it.productId),
+          (it) => it.status === "A comprar" && alvo.has(it.listId) && comprados.has(it.productId),
         )
         .map((it) => it.id);
       if (remover.length) {

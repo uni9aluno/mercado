@@ -43,9 +43,7 @@ export function PriceSpark({ serie, storeById }: Props) {
     <div className="relative">
       <svg viewBox={`0 0 ${LG} ${AL}`} className="w-full">
         {ordem.map((sid, li) => {
-          const pontos = serie
-            .map((p, ix) => ({ p, ix }))
-            .filter(({ p }) => p.storeId === sid);
+          const pontos = serie.map((p, ix) => ({ p, ix })).filter(({ p }) => p.storeId === sid);
           const cor = CORES[li % 4];
           const d = pontos.map(({ p, ix }) => `${px(ix)},${py(p.price)}`).join(" ");
           const impar = li % 2 === 1;

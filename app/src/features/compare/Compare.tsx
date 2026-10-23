@@ -108,10 +108,7 @@ export function Compare() {
     return mp;
   }, [itensLista]);
 
-  const series = useMemo(
-    () => buildSeries(items, purchaseById),
-    [items, purchaseById],
-  );
+  const series = useMemo(() => buildSeries(items, purchaseById), [items, purchaseById]);
 
   const comparativos = useMemo(
     () =>
@@ -572,9 +569,7 @@ export function Compare() {
                 </button>
 
                 {pref != null && (
-                  <div className="mt-1 text-xs text-emerald-700">
-                    Preferido: {nomeLoja(pref)}
-                  </div>
+                  <div className="mt-1 text-xs text-emerald-700">Preferido: {nomeLoja(pref)}</div>
                 )}
 
                 {aberta && (
@@ -593,9 +588,7 @@ export function Compare() {
                             {nomeLoja(sid)} · {st.count} registro(s)
                             {st.lastDate ? " · " + brDate(st.lastDate) : ""}
                           </span>
-                          <span className="flex-shrink-0 font-medium text-gray-700">
-                            {fmt(vl)}
-                          </span>
+                          <span className="flex-shrink-0 font-medium text-gray-700">{fmt(vl)}</span>
                         </div>
                       ))}
                     </div>
@@ -666,9 +659,7 @@ export function Compare() {
                   <div className="flex-shrink-0 text-right">
                     <span
                       className={
-                        ix === 0
-                          ? "font-semibold text-emerald-700"
-                          : "font-medium text-gray-700"
+                        ix === 0 ? "font-semibold text-emerald-700" : "font-medium text-gray-700"
                       }
                     >
                       {fmt(rw.unitPrice) + "/" + rw.unit}

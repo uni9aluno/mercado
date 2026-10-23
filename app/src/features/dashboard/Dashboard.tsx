@@ -18,6 +18,7 @@ import { linhasOrcamento } from "@/domain/budget";
 import { agoraBr, fmt, fmtPct, today } from "@/lib/text";
 import type { Id, Product } from "@/db/types";
 import { Dica, Empty, Icon, Modal, Stat } from "@/ui";
+import { useAuth } from "@/features/auth/AuthContext";
 import { computeDashboard, textoRestante } from "./Dashboard.calc";
 
 interface Props {
@@ -32,6 +33,7 @@ export function Dashboard({ onNavigate }: Props) {
   const { priceIndex } = usePriceIndex();
   const { items: shopping, activeLists } = useShoppingByList();
   const { budget, rules, activeListIds, backupAt } = useDerived();
+  const nuvem = useAuth() != null;
 
   const [pick, setPick] = useState<Product | null>(null);
 
@@ -49,6 +51,7 @@ export function Dashboard({ onNavigate }: Props) {
         budget,
         rules,
         backupAt,
+        nuvem,
         agora: new Date(),
         mes: today().slice(0, 7),
       }),
@@ -64,6 +67,7 @@ export function Dashboard({ onNavigate }: Props) {
       budget,
       rules,
       backupAt,
+      nuvem,
     ],
   );
 

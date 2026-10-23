@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { repos } from "@/data";
 import type { EanCatalogSettings } from "@/db/types";
 import { useSetting } from "@/hooks";
-import { DEFAULT_EAN_CONFIG, normalizeEanConfig, testarConexao } from "@/integrations/eanCatalog";
+import {
+  DEFAULT_EAN_CONFIG,
+  normalizeEanConfig,
+  temConfigSupabase,
+  testarConexao,
+} from "@/integrations/eanCatalog";
+import { authEnabled } from "@/integrations/supabase";
 import { Btn, Dica, Field } from "@/ui";
 import { inputCls } from "@/ui";
 import { Panel } from "./Panel";
@@ -66,7 +72,8 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
     }
   }, [salvo]);
 
-  const semSupabase = !form.url.trim() || !form.anonKey.trim();
+  // Com login, o catálogo é o do projeto da conta: URL/chave da Config não se aplicam.
+  const semSupabase = !temConfigSupabase(form);
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -99,34 +106,51 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
     <Panel title="Catálogo de códigos de barras (EAN)">
       <Dica
         id="ean-catalog"
-        itens={[
-          "Ligado, ao escanear um produto novo o app busca automaticamente nome, marca, tamanho e foto na base pública Open Food Facts — sem chave e sem configuração.",
-          "O Supabase é opcional: configure-o apenas se quiser um catálogo próprio compartilhado pelo casal e contribuir com os cadastros que ainda não existem online.",
-          "A chave anônima (anon key) fica salva e visível neste aparelho. Use a chave anon (pública) do Supabase, nunca a service_role.",
-          "Nenhuma foto é enviada ao Supabase. Imagens encontradas na Open Food Facts são reduzidas e guardadas somente neste aparelho.",
-        ]}
+        itens={
+          authEnabled
+            ? [
+                "Ligado, ao escanear um produto novo o app procura primeiro no catálogo compartilhado e depois na base pública Open Food Facts, sem chave.",
+                "O catálogo compartilhado fica no mesmo Supabase da sua conta: não há URL nem chave para configurar. Só quem está conectado consegue ler ou contribuir.",
+                "Com “Contribuir” ligado, cada produto novo com código de barras envia só nome, marca e tamanho. Nada pessoal, nada de preços.",
+                "Nenhuma foto é enviada ao Supabase. Imagens encontradas na Open Food Facts são reduzidas e guardadas somente neste aparelho.",
+              ]
+            : [
+                "Ligado, ao escanear um produto novo o app busca automaticamente nome, marca, tamanho e foto na base pública Open Food Facts — sem chave e sem configuração.",
+                "O Supabase é opcional: configure-o apenas se quiser um catálogo próprio compartilhado pelo casal e contribuir com os cadastros que ainda não existem online.",
+                "A chave anônima (anon key) fica salva e visível neste aparelho. Use a chave anon (pública) do Supabase, nunca a service_role.",
+                "Nenhuma foto é enviada ao Supabase. Imagens encontradas na Open Food Facts são reduzidas e guardadas somente neste aparelho.",
+              ]
+        }
       />
 
-      <Field label="URL do projeto Supabase (opcional)">
-        <input
-          className={inputCls}
-          placeholder="https://xxxx.supabase.co"
-          value={form.url}
-          onChange={(e) => set("url", e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </Field>
-      <Field label="Chave anônima — anon key (opcional)">
-        <input
-          className={inputCls + " font-mono text-xs"}
-          placeholder="eyJhbGciOi…"
-          value={form.anonKey}
-          onChange={(e) => set("anonKey", e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </Field>
+      {authEnabled ? (
+        <p className="mb-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+          Catálogo compartilhado: usa o projeto Supabase da sua conta.
+        </p>
+      ) : (
+        <>
+          <Field label="URL do projeto Supabase (opcional)">
+            <input
+              className={inputCls}
+              placeholder="https://xxxx.supabase.co"
+              value={form.url}
+              onChange={(e) => set("url", e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+          <Field label="Chave anônima — anon key (opcional)">
+            <input
+              className={inputCls + " font-mono text-xs"}
+              placeholder="eyJhbGciOi…"
+              value={form.anonKey}
+              onChange={(e) => set("anonKey", e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+        </>
+      )}
 
       <div className="mb-3 divide-y divide-gray-100">
         <Toggle
@@ -141,7 +165,11 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
           onChange={(v) => set("off", v)}
         />
         <Toggle
-          label="Contribuir com meu catálogo Supabase"
+          label={
+            authEnabled
+              ? "Contribuir com o catálogo compartilhado"
+              : "Contribuir com meu catálogo Supabase"
+          }
           checked={form.contribute}
           disabled={!form.enabled || semSupabase}
           onChange={(v) => set("contribute", v)}
@@ -151,7 +179,7 @@ export function EanCatalogPanel({ aviso }: { aviso: (m: string) => void }) {
       <div className="flex gap-2">
         <Btn onClick={salvar}>Salvar</Btn>
         <Btn variant="secondary" disabled={semSupabase || testando} onClick={testar}>
-          {testando ? "Testando…" : "Testar Supabase"}
+          {testando ? "Testando…" : authEnabled ? "Testar catálogo" : "Testar Supabase"}
         </Btn>
       </div>
 

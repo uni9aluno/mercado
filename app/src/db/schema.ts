@@ -123,8 +123,7 @@ export class MercadoDB extends Dexie {
         stores: "++id,&uid,name",
         products: "++id,&uid,name,category,frequency,barcode",
         purchases: "++id,&uid,date,storeId",
-        purchaseItems:
-          "++id,&uid,purchaseId,productId,[productId+legacy],[purchaseId+productId]",
+        purchaseItems: "++id,&uid,purchaseId,productId,[productId+legacy],[purchaseId+productId]",
         shoppingItems:
           "++id,&uid,productId,status,priority,[status+priority],listId,[listId+status],[listId+productId]",
         shoppingLists: "++id,&uid,name,storeId,active",

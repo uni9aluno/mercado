@@ -36,7 +36,23 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # URL e chave do Supabase vêm dos secrets do repositório (fora do código).
+      # Sem eles, o build sairia sem login; o passo abaixo interrompe o deploy
+      # para não publicar essa versão por engano.
+      - name: Conferir secrets do Supabase
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Crie os secrets SUPABASE_URL e SUPABASE_ANON_KEY em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

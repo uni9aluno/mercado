@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Product, Purchase, PurchaseItem } from "@/db/types";
-import {
-  baseContent,
-  buildPriceIndex,
-  effectiveTarget,
-  light,
-  priceFor,
-} from "./priceIndex";
+import { baseContent, buildPriceIndex, effectiveTarget, light, priceFor } from "./priceIndex";
 
 function purchase(p: Partial<Purchase> & { id: string; date: string }): Purchase {
   return { storeId: null, ...p };
 }
-function item(p: Partial<PurchaseItem> & { id: string; purchaseId: string; productId: string }): PurchaseItem {
+function item(
+  p: Partial<PurchaseItem> & { id: string; purchaseId: string; productId: string },
+): PurchaseItem {
   return { ...p };
 }
 function prod(p: Partial<Product> & { id: string; name: string }): Product {
@@ -19,7 +15,8 @@ function prod(p: Partial<Product> & { id: string; name: string }): Product {
 }
 
 const DIA = 86_400_000;
-const iso = (offsetDias: number) => new Date(Date.now() - offsetDias * DIA).toISOString().slice(0, 10);
+const iso = (offsetDias: number) =>
+  new Date(Date.now() - offsetDias * DIA).toISOString().slice(0, 10);
 
 describe("buildPriceIndex", () => {
   it("acumula count/sum/avg/min/max e o último preço global", () => {
@@ -120,7 +117,9 @@ describe("light", () => {
 
 describe("baseContent", () => {
   it("converte ml/g para L/kg", () => {
-    expect(baseContent(prod({ id: "x", name: "X", packageSize: 500, packageUnit: "ml" }))).toBe(0.5);
+    expect(baseContent(prod({ id: "x", name: "X", packageSize: 500, packageUnit: "ml" }))).toBe(
+      0.5,
+    );
     expect(baseContent(prod({ id: "x", name: "X", packageSize: 800, packageUnit: "g" }))).toBe(0.8);
   });
   it("passa L/kg direto", () => {
