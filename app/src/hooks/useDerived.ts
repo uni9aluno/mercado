@@ -1,11 +1,6 @@
 import { useMemo } from "react";
 import { useLists, useSetting } from "./useData";
-import type {
-  BackupInfoSettings,
-  BudgetSettings,
-  RulesSettings,
-  UiSettings,
-} from "@/db/types";
+import type { BackupInfoSettings, BudgetSettings, RulesSettings, UiSettings } from "@/db/types";
 
 const RULES_DEFAULT = {
   tolerance: 0.1,

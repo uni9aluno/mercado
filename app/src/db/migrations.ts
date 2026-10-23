@@ -125,13 +125,25 @@ export interface BackupShape {
   categories?: Array<Record<string, unknown> & { id?: unknown; uid?: unknown }>;
   stores?: Array<Record<string, unknown> & { id?: unknown; uid?: unknown }>;
   products?: Array<
-    Record<string, unknown> & { id?: unknown; uid?: unknown; categoryId?: unknown; preferredStoreId?: unknown }
+    Record<string, unknown> & {
+      id?: unknown;
+      uid?: unknown;
+      categoryId?: unknown;
+      preferredStoreId?: unknown;
+    }
   >;
   purchases?: Array<Record<string, unknown> & { id?: unknown; uid?: unknown; storeId?: unknown }>;
   purchaseItems?: Array<
-    Record<string, unknown> & { id?: unknown; uid?: unknown; purchaseId?: unknown; productId?: unknown }
+    Record<string, unknown> & {
+      id?: unknown;
+      uid?: unknown;
+      purchaseId?: unknown;
+      productId?: unknown;
+    }
   >;
-  shoppingLists?: Array<Record<string, unknown> & { id?: unknown; uid?: unknown; storeId?: unknown }>;
+  shoppingLists?: Array<
+    Record<string, unknown> & { id?: unknown; uid?: unknown; storeId?: unknown }
+  >;
   shoppingItems?: Array<
     Record<string, unknown> & { id?: unknown; uid?: unknown; listId?: unknown; productId?: unknown }
   >;
@@ -141,8 +153,7 @@ export interface BackupShape {
 
 /** Backup "antigo" = os registros têm `id` numérico e não têm `uid`. */
 export function precisaConverterBackup(b: BackupShape): boolean {
-  const amostra =
-    b.products?.[0] ?? b.categories?.[0] ?? b.stores?.[0] ?? b.purchases?.[0];
+  const amostra = b.products?.[0] ?? b.categories?.[0] ?? b.stores?.[0] ?? b.purchases?.[0];
   if (!amostra) return false;
   return typeof amostra.id === "number" && amostra.uid == null;
 }

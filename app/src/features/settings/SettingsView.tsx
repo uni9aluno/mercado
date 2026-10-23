@@ -121,8 +121,14 @@ export function SettingsView() {
   useEffect(() => {
     recarregarAuto();
     try {
-      navigator.storage?.estimate?.().then((e) => setUso(e?.usage ?? null)).catch(() => {});
-      navigator.storage?.persisted?.().then(setProtegido).catch(() => {});
+      navigator.storage
+        ?.estimate?.()
+        .then((e) => setUso(e?.usage ?? null))
+        .catch(() => {});
+      navigator.storage
+        ?.persisted?.()
+        .then(setProtegido)
+        .catch(() => {});
     } catch {
       /* API indisponível */
     }
@@ -449,9 +455,7 @@ export function SettingsView() {
         qtd +
           " item(ns) importado(s)." +
           (plano.storeId
-            ? " Lista ligada ao mercado " +
-              (storeById.get(plano.storeId)?.name ?? "") +
-              "."
+            ? " Lista ligada ao mercado " + (storeById.get(plano.storeId)?.name ?? "") + "."
             : " A lista ficou sem mercado — escolha um no ⋯ da tela Lista, senão os itens não saem sozinhos quando você registrar a compra."),
       );
     } catch (e) {
@@ -521,7 +525,8 @@ export function SettingsView() {
           </label>
         </div>
         <p className="mb-3 text-sm text-gray-500">
-          Total: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+          Total:{" "}
+          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
             totalOrcamento,
           )}
         </p>
@@ -539,9 +544,7 @@ export function SettingsView() {
             max="100"
             step="1"
             value={Math.round(100 * rules.tolerance)}
-            onChange={(e) =>
-              setRules((r) => ({ ...r, tolerance: Number(e.target.value) / 100 }))
-            }
+            onChange={(e) => setRules((r) => ({ ...r, tolerance: Number(e.target.value) / 100 }))}
           />
         </label>
         <label className="mb-3 block">
@@ -664,7 +667,9 @@ export function SettingsView() {
         </p>
         <div className="mb-3 space-y-1.5 rounded-xl bg-gray-50 p-3 text-xs">
           <div className="flex justify-between gap-2">
-            <span className="text-gray-500">{auth ? "Último backup baixado" : "Último backup"}</span>
+            <span className="text-gray-500">
+              {auth ? "Último backup baixado" : "Último backup"}
+            </span>
             <span
               className={
                 "text-right font-medium " + (backupVelho ? "text-amber-700" : "text-gray-700")

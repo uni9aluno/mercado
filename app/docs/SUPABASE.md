@@ -4,7 +4,9 @@
 > usar o mesmo projeto da conta, sem URL nem chave na Config, e a tabela aceita só
 > usuários autenticados: ver a migração
 > [`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql)
-> e [CONTAS.md](CONTAS.md). O conteúdo abaixo vale para o modo local, sem login.
+> e [CONTAS.md](CONTAS.md). Com login, as fotos de produto vão para o Supabase
+> Storage (bucket privado `product-photos`), não para esta tabela. O conteúdo abaixo
+> vale para o modo local, sem login.
 
 O preenchimento automático já funciona sem configuração: ao escanear ou digitar
 um código desconhecido, o app consulta a API pública Open Food Facts v3 e traz

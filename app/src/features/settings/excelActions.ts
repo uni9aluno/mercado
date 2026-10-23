@@ -81,7 +81,7 @@ export function exportarExcel(d: DadosExport): void {
         const prod = d.productById.get(it.productId);
         return {
           Data: pu ? pu.date : "",
-          Mercado: pu ? (pu.storeName || (st ? st.name : "")) : "",
+          Mercado: pu ? pu.storeName || (st ? st.name : "") : "",
           Produto: it.productName || (prod ? prod.name : ""),
           Categoria: it.category || (prod ? prod.category : ""),
           Quantidade: it.quantity,
@@ -189,15 +189,13 @@ export function planejarImportProdutos(
       brand: String(pick(row, "Marca", "brand") || ""),
       barcode: barcodeRaw || null,
       packageSize: Number(pick(row, "Tam. Embalagem", "packageSize")) || null,
-      packageUnit: (pick(row, "Unid. Embalagem", "packageUnit") ||
-        "") as NewProduct["packageUnit"],
+      packageUnit: (pick(row, "Unid. Embalagem", "packageUnit") || "") as NewProduct["packageUnit"],
       category,
       categoryId: catPorNome.get(norm(category)) ?? null,
       frequency: (pick(row, "Frequência", "Frequencia", "frequency") ||
         "30 dias") as NewProduct["frequency"],
       unit: String(pick(row, "Unidade", "unit") || "un"),
-      defaultPrice:
-        Number(pick(row, "Preço Padrão", "Preço Unit. Padrão", "defaultPrice")) || null,
+      defaultPrice: Number(pick(row, "Preço Padrão", "Preço Unit. Padrão", "defaultPrice")) || null,
       targetPrice: Number(pick(row, "Preço-Alvo", "targetPrice")) || null,
     };
 

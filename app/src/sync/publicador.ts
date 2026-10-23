@@ -1,15 +1,14 @@
 // ===========================================================================
 //  Publicação automática no "catálogo de todos".
 //
-//  Depois de cada sincronização bem-sucedida, publica os produtos desta conta
-//  que ainda não foram publicados por este aparelho. Funciona para qualquer
-//  forma de cadastro (tela Produtos, código de barras, Excel, lista importada)
-//  sem tocar em cada uma delas. Preferência em settings `sharedCatalog`;
-//  ausente = publicar (o que sai é só dado de produto, nunca preço).
+//  Todo produto de qualquer conta fica visível para todos os usuários. Depois
+//  de cada sincronização bem-sucedida, publica os produtos desta conta que
+//  ainda não foram publicados por este aparelho (ou que ganharam foto nova).
+//  Funciona para qualquer forma de cadastro (tela Produtos, código de barras,
+//  Excel, lista importada) sem tocar em cada uma delas. Nunca sai preço.
 // ===========================================================================
 
 import { repos } from "@/data";
-import type { SharedCatalogSettings } from "@/db/types";
 import { pendentesDePublicacao } from "@/domain/sharedCatalog";
 import { publicarItens } from "@/integrations/sharedCatalog";
 import { assinarStatus, lerStatus, type Conta } from "./accountSync";
@@ -39,14 +38,9 @@ function gravarPublicadas(uid: string, chaves: Set<string>) {
   }
 }
 
-export async function publicacaoLigada(): Promise<boolean> {
-  const row = await repos.settings.get<SharedCatalogSettings>("sharedCatalog");
-  return row?.publicar ?? true;
-}
-
 /**
- * Publica o que falta. `manual` ignora a preferência e propaga erros (botão da
- * Config); em segundo plano, falhas ficam em silêncio e tentam de novo depois.
+ * Publica o que falta. `manual` propaga erros (botão da Config); em segundo
+ * plano, falhas ficam em silêncio e tentam de novo depois.
  * Devolve quantos produtos foram enviados.
  */
 export function publicarPendentes(manual = false): Promise<number> {
@@ -54,7 +48,6 @@ export function publicarPendentes(manual = false): Promise<number> {
   emAndamento = (async () => {
     const c = conta;
     if (!c) return 0;
-    if (!manual && !(await publicacaoLigada())) return 0;
     if (navigator.onLine === false) {
       if (manual) throw new Error("Sem conexão.");
       return 0;
@@ -63,7 +56,7 @@ export function publicarPendentes(manual = false): Promise<number> {
     const pendentes = pendentesDePublicacao(await repos.products.all(), publicadas);
     if (!pendentes.length) return 0;
     try {
-      const aceitas = await publicarItens(pendentes);
+      const aceitas = await publicarItens(pendentes, c.id);
       aceitas.forEach((k) => publicadas.add(k));
       gravarPublicadas(c.id, publicadas);
       return aceitas.length;

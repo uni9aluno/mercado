@@ -21,7 +21,13 @@ import { seedIfEmpty } from "@/db/seed";
 import { backupJson } from "@/domain/backup";
 import { supabase } from "@/integrations/supabase";
 import { decidirReconciliacao } from "./reconcile";
-import { DUMP_VAZIO, LIMITE_SNAPSHOT_BYTES, montarSnapshot, snapshotParaDump } from "./snapshot";
+import {
+  DUMP_VAZIO,
+  LIMITE_SNAPSHOT_BYTES,
+  montarSnapshot,
+  preservarFotosLocais,
+  snapshotParaDump,
+} from "./snapshot";
 
 export interface Conta {
   id: string;
@@ -193,7 +199,7 @@ async function semMarcar<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function aplicarRemoto(conta: Conta, linha: LinhaRemota): Promise<void> {
-  const dump = snapshotParaDump(linha.data);
+  const dump = preservarFotosLocais(snapshotParaDump(linha.data), await db.products.toArray());
   await semMarcar(() => repos.backup.restoreAll(dump));
   gravarEstado({ dono: conta, revisao: linha.revision, pendente: false, ultimaSync: Date.now() });
 }

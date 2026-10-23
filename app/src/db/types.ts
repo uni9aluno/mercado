@@ -57,8 +57,10 @@ export interface ProductRow extends RowBase {
   /** uid do mercado preferido (ou null). */
   preferredStoreId?: Id | null;
   comparisonGroup?: string | null;
-  /** data URI (JPEG ~200px) baixada da Open Food Facts ou escolhida pelo usuário. */
+  /** data URI (WebP/JPEG reduzido) — cópia local da foto, para exibir offline. */
   image?: string | null;
+  /** caminho da foto no Storage (`<usuário>/<produto>-<hash>.<ext>`), quando já enviada. */
+  imagePath?: string | null;
   /** contador { uid do mercado: nº de vezes que faltou aqui }. Dispara o aviso
    *  "esse produto já faltou N vezes neste mercado" ao re-adicionar na lista. */
   missingByStore?: Record<string, number>;

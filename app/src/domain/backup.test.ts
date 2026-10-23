@@ -83,7 +83,14 @@ describe("codificar/decodificarLista", () => {
   const lista: ShoppingList = { id: "L1", name: "Feira", storeId: "s1", active: 1 };
   const itens: ShoppingItem[] = [
     { id: "i1", productId: "p1", status: "A comprar", priority: "Alta", listId: "L1", quantity: 2 },
-    { id: "i2", productId: "p2", status: "A comprar", priority: "Média", listId: "L1", quantity: 1 },
+    {
+      id: "i2",
+      productId: "p2",
+      status: "A comprar",
+      priority: "Média",
+      listId: "L1",
+      quantity: 1,
+    },
     { id: "i3", productId: "p3", status: "Comprado", priority: "Baixa", listId: "L1", quantity: 1 },
   ];
   const productById = new Map<string, Product>([
@@ -106,7 +113,12 @@ describe("codificar/decodificarLista", () => {
   });
 
   it("decodifica MDC0 (base64 puro)", async () => {
-    const obj = { v: 1 as const, n: "L", s: "Loja", i: [["X", 1, "Média"]] as [string, number, string][] };
+    const obj = {
+      v: 1 as const,
+      n: "L",
+      s: "Loja",
+      i: [["X", 1, "Média"]] as [string, number, string][],
+    };
     // força MDC0 montando manualmente
     const b64 = btoa(new TextDecoder().decode(new TextEncoder().encode(JSON.stringify(obj))));
     const volta = await decodificarLista("MDC0:" + b64);

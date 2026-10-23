@@ -39,7 +39,9 @@ export function Thumb({ src, nome, size = 40 }: Props) {
   const inicial = (nome.trim()[0] || "?").toUpperCase();
   return (
     <div
-      className={"flex shrink-0 items-center justify-center rounded-lg font-semibold " + corDe(nome)}
+      className={
+        "flex shrink-0 items-center justify-center rounded-lg font-semibold " + corDe(nome)
+      }
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden="true"
     >

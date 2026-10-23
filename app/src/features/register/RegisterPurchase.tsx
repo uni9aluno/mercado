@@ -244,7 +244,11 @@ export function RegisterPurchase({ onNavigate }: Props) {
         </div>
         <Select
           label="Mercado"
-          options={storeById.size ? [...storeById.values()].map((s) => ({ value: s.id, label: s.name })) : []}
+          options={
+            storeById.size
+              ? [...storeById.values()].map((s) => ({ value: s.id, label: s.name }))
+              : []
+          }
           placeholder="Selecionar"
           value={storeId}
           onChange={(e) => setStoreId(e.target.value)}
@@ -361,21 +365,12 @@ export function RegisterPurchase({ onNavigate }: Props) {
         <span className="text-xl font-bold text-emerald-700">{fmt(total)}</span>
       </div>
 
-      <Btn
-        className="w-full"
-        onClick={() => void salvar()}
-        disabled={!itens.length || !storeId}
-      >
+      <Btn className="w-full" onClick={() => void salvar()} disabled={!itens.length || !storeId}>
         Salvar compra
       </Btn>
 
       <Modal open={pickerAberto} onClose={() => setPickerAberto(false)} title="Selecionar produto">
-        <ProductPicker
-          instant
-          products={products}
-          priceIndex={priceIndex}
-          onAdd={incluirProduto}
-        />
+        <ProductPicker instant products={products} priceIndex={priceIndex} onAdd={incluirProduto} />
       </Modal>
 
       {lookupOpen && (

@@ -40,10 +40,7 @@ export function linhasOrcamento(
       larguraPct: Math.min(100, 100 * fracao),
     };
   };
-  return [
-    mk("VR/VA", gastoVrva, budget.vrva),
-    mk("Dinheiro e outros", gastoOutros, budget.extra),
-  ];
+  return [mk("VR/VA", gastoVrva, budget.vrva), mk("Dinheiro e outros", gastoOutros, budget.extra)];
 }
 
 export interface AlertaVrva {
