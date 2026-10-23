@@ -7,7 +7,7 @@ configuração (passo a passo no Supabase) fica em
 | Item | Valor |
 |---|---|
 | Branch | `claude/login-page-supabase-589o0b` |
-| Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) (rascunho) |
+| Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) |
 | Data | 23/10/2026 |
 | Situação | Código pronto. SQL aplicado e validado no projeto real. Build de produção apontando para o projeto e testado contra o Auth real. Faltam: URLs de redirecionamento no painel do Auth (sem ferramenta no conector), backup JSON nos aparelhos e o merge. |
 
@@ -191,8 +191,22 @@ Responsável: dono do projeto Supabase e do repositório.
    `app/.env.production`.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
-5. Merge do PR #1 na `main`, que dispara o deploy e torna o login obrigatório no
-   app publicado. Aguarda sua decisão, porque depende do item 2.
+5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
+
+### Decisão registrada: merge antes da configuração de URLs (23/10/2026)
+
+Opções apresentadas: (a) aguardar a configuração de URLs no painel e o backup e
+só então fazer o merge, que era a recomendada; (b) fazer o merge agora; (c) não
+publicar ainda. **Escolhida: (b) merge agora.**
+
+Trade-off aceito, até o item 2 ser feito no painel:
+
+| Fluxo | Situação |
+|---|---|
+| Entrar com e-mail e senha | Funciona |
+| Criar conta | Funciona; o link de confirmação valida a conta, mas leva a uma página de erro (`localhost:3000`). É preciso voltar ao app e entrar. |
+| Esqueci minha senha | **Não funciona** |
+| Dados de quem já usa o app | Preservados: no primeiro login, a base do aparelho passa a ser da conta (seção 4.3). O backup JSON continua recomendado como cópia extra. |
 
 ## 8. Próximos passos possíveis (fora do escopo atual)
 
@@ -212,3 +226,4 @@ Responsável: dono do projeto Supabase e do repositório.
 | 23/10/2026 | Este registro, a pedido do usuário. |
 | 23/10/2026 | Projeto Supabase reativado; SQL aplicado e validado pelo conector (seção 5.1). |
 | 23/10/2026 | Build de produção configurado em `app/.env.production`; testado contra o Auth real (seção 5.2). |
+| 23/10/2026 | Merge do PR #1 na `main` por decisão do usuário, antes da configuração de URLs (seção 7). |
