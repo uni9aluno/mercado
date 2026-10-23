@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas. Origem do Pages **ainda em "Deploy from a branch"** (seção 7, pendência 6). |
+| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas. Origem do Pages trocada de novo pelo usuário; o merge deste registro (PR #3) é o teste (seção 7, pendência 6). |
 
 ---
 
@@ -284,7 +284,7 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
-6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions". Continua pendente.** O usuário informou a troca, mas o merge do PR #2 (23/10/2026, 20:47 UTC) ainda disparou "pages build and deployment" junto com "Deploy PWA", o que só acontece com a origem "Deploy from a branch". Desta vez o app terminou por último (18 s depois) e ficou no ar; no próximo push o README pode voltar. Ao trocar, confirmar que o seletor mostra "GitHub Actions" depois de recarregar a página.
+6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions". Continua pendente.** O usuário informou a troca, mas o merge do PR #2 (23/10/2026, 20:47 UTC) ainda disparou "pages build and deployment" junto com "Deploy PWA", o que só acontece com a origem "Deploy from a branch". Desta vez o app terminou por último (18 s depois) e ficou no ar; no próximo push o README pode voltar. Ao trocar, confirmar que o seletor mostra "GitHub Actions" depois de recarregar a página. **Atualização:** o usuário refez a troca; o merge do PR #3 serve de teste (o resultado fica no histórico abaixo).
    Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
    disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
    de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
