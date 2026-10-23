@@ -99,4 +99,4 @@ O passo a passo completo (publicar em HTTPS de graça, instalar no Android, inst
 
 ---
 
-*Para quem for mexer no código: veja [app/REESCRITA.md](app/REESCRITA.md) (arquitetura e estado), [app/docs/FASE6.md](app/docs/FASE6.md) (validação da migração/publicação), [HANDOFF.md](HANDOFF.md) (histórico) e [INSTALAR-PWA.md](INSTALAR-PWA.md) (instalação e deploy).*
+*Para quem for mexer no código: veja [INSTALAR-PWA.md](INSTALAR-PWA.md) (instalação e deploy) e [app/docs/SUPABASE.md](app/docs/SUPABASE.md) (catálogo de EAN opcional).*
