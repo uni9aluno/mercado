@@ -90,25 +90,29 @@ uso contínuo, configure um SMTP próprio em **Authentication → SMTP Settings*
 
 ## 4. Ligar no app publicado
 
-A URL do projeto e a chave **publishable** ficam em [`app/.env.production`](../.env.production),
-versionado. O build de produção (workflow **Deploy PWA no GitHub Pages**, a cada
-push na `main`) lê esse arquivo.
+A URL do projeto e a chave **publishable** não ficam no repositório. O build de
+produção (workflow **Deploy PWA no GitHub Pages**, a cada push na `main`) lê os dois
+valores dos **secrets** do GitHub:
 
-| Variável | Onde pegar no Supabase |
+GitHub → repositório → **Settings → Secrets and variables → Actions → Secrets → New repository secret**
+
+| Secret | Onde pegar no Supabase |
 |---|---|
-| `VITE_SUPABASE_URL` | Settings → API → Project URL |
-| `VITE_SUPABASE_ANON_KEY` | Settings → API Keys → **Publishable key** (`sb_publishable_...`) ou a legada `anon` |
+| `SUPABASE_URL` | Settings → API → Project URL |
+| `SUPABASE_ANON_KEY` | Settings → API Keys → **Publishable key** (`sb_publishable_...`) |
 
-Os dois valores vão no JavaScript público do app de qualquer forma; a proteção dos
-dados está no RLS, não no sigilo da chave. Por isso ficam no repositório, sem
-configuração extra no GitHub.
+Sem os dois secrets, o workflow para antes do build, com a mensagem de erro
+indicando o que falta, e o site publicado continua na versão anterior: assim uma
+versão sem login nunca vai ao ar por engano.
 
-> **Nunca** coloque ali a chave **secret** (`sb_secret_...`) nem a `service_role`:
+A chave publishable vai no JavaScript público do app (é assim que o navegador fala
+com o Supabase); quem protege os dados é o RLS. Manter os valores fora do código
+evita expor o projeto a quem só lê o repositório e facilita trocar de chave.
+
+> **Nunca** use a chave **secret** (`sb_secret_...`) nem a `service_role`:
 > elas ignoram o RLS e dariam acesso total a qualquer pessoa que abrisse o app.
 
-Para trocar de projeto, edite o arquivo. Para voltar ao modo local, sem login,
-apague as duas linhas. Não repasse essas variáveis vazias pelo workflow: no Vite,
-variável de ambiente definida, mesmo vazia, tem prioridade sobre o arquivo.
+Para trocar de projeto ou de chave, atualize os dois secrets e rode o workflow de novo.
 
 ### Desenvolvimento local
 

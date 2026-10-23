@@ -6,6 +6,8 @@ dist
 dist-ssr
 .vite
 *.local
+# URL e chave do Supabase ficam fora do repositório: no CI vêm dos secrets do GitHub.
+.env.production
 *.tsbuildinfo
 
 # logs

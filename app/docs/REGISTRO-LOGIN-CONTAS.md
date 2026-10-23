@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas. Origem do Pages trocada de novo pelo usuário; o merge deste registro (PR #3) é o teste (seção 7, pendência 6). |
+| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas. Origem do Pages comprovada em "GitHub Actions". URL e chave do Supabase nos secrets do GitHub (seção 4.6; pendência 7). |
 
 ---
 
@@ -22,6 +22,7 @@ configuração (passo a passo no Supabase) fica em
 | 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
 | 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
 | 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
+| 7 | "Deixe no repositório do GitHub apenas o que for necessário: api, keys etc. Se não necessário, deixe local" | URL e chave do Supabase saem do repositório e passam a vir dos secrets do GitHub; identificadores do projeto removidos da documentação (seção 4.6). |
 | 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
@@ -51,7 +52,7 @@ configuração (passo a passo no Supabase) fica em
 | IndexedDB continua sendo a base de trabalho | Ler e gravar direto no Supabase | Mantém o app funcionando offline, que é requisito central da PWA. |
 | Controle otimista por `revision` (RPC `save_account_data`) | "Último que gravar vence" sem checagem | Impede que um aparelho sobrescreva sem perceber a gravação de outro. O conflito é detectado e a versão local vira cópia. |
 | Credenciais no build (`VITE_SUPABASE_*`) | Digitar URL e chave na tela, como no EAN | O login precisa existir antes de qualquer tela. Sem as variáveis, o app segue no modo local (nada quebra para quem não configurar). |
-| URL e chave publishable em `app/.env.production`, versionado | Variáveis ou secrets do GitHub | A chave é pública por desenho e vai no JavaScript. Quem protege os dados é o RLS. Além disso, esta sessão não tem ferramenta para criar variáveis no GitHub, e variável vazia no workflow anularia o arquivo. |
+| ~~URL e chave publishable em `app/.env.production`, versionado~~ **Substituída em 23/10/2026 (pedido 7): secrets do GitHub** | Variáveis ou secrets do GitHub | A chave é pública por desenho e vai no JavaScript. Quem protege os dados é o RLS. Além disso, esta sessão não tem ferramenta para criar variáveis no GitHub, e variável vazia no workflow anularia o arquivo. |
 | Chave **publishable** (`sb_publishable_...`) | Chave legada `anon` (JWT) | Recomendada pelo Supabase: pode ser trocada sem invalidar as demais. Suportada pela versão do `supabase-js` usada. |
 | Fluxo `implicit` nos links de e-mail | PKCE | Com PKCE, o link precisa ser aberto no mesmo navegador que o pediu, o que quebra o PWA instalado no iOS. O token vem no fragmento (`#`) da URL, que não é enviado a servidor. |
 | Cadastro aberto por padrão | Cadastro fechado | Sem cadastro aberto, a primeira conta não pode ser criada pelo app. O guia explica como fechar depois de criar as contas do casal. |
@@ -87,9 +88,26 @@ configuração (passo a passo no Supabase) fica em
 | `src/sync/accountSync.ts` | Motor de sync: hooks do Dexie, debounce, envio, conflito, offline, saída. |
 | `src/sync/snapshot.ts` | Monta e valida o snapshot (formato do backup v3). |
 | `src/App.tsx` | Envolve o app no `AuthGate` quando `authEnabled`. |
-| `.env.production` | URL do projeto e chave publishable usadas no build de produção. |
-| `.github/workflows/deploy.yml` | Apenas um comentário: não repassar as variáveis vazias (anularia o `.env.production`). |
+| `.env.production` | Fora do repositório desde o pedido 7 (seção 4.6). |
+| `.github/workflows/deploy.yml` | Lê URL e chave dos secrets do GitHub e para o deploy se faltarem. |
 | `.env.example` | Modelo para testar localmente. |
+
+### 4.6 O que fica no repositório (pedido 7)
+
+| Item | Onde fica agora | Motivo |
+|---|---|---|
+| URL e chave publishable do Supabase | Secrets do GitHub (`SUPABASE_URL`, `SUPABASE_ANON_KEY`) e, para desenvolvimento, `app/.env.local` ou `app/.env.production` no computador (ambos no `.gitignore`) | Não são necessários no código; o workflow lê dos secrets e para se faltarem. |
+| Identificador do projeto Supabase nos documentos | Removido | Não é necessário para entender ou rodar o app. |
+| Migrações SQL (`app/supabase/migrations/`) | Repositório | Necessárias para recriar o banco; não contêm chaves. |
+| `app/.env.example` | Repositório | Só nomes das variáveis e valores de exemplo. |
+| `app/public/MercadoDoCasal.html` | Repositório | Redirecionamento do endereço antigo para quem tem o app instalado. |
+
+**Histórico do git:** commits anteriores ainda contêm a URL e a chave publishable
+(arquivo `app/.env.production`). Reescrever o histórico da `main` exigiria force-push
+e invalidaria cópias existentes, por isso não foi feito. A chave publishable é
+pública por desenho (vai no JavaScript do site), então o risco é baixo. Para tirá-la
+de circulação mesmo assim: no Supabase, criar uma nova publishable key, colocá-la no
+secret `SUPABASE_ANON_KEY`, rodar o deploy e desativar a antiga.
 
 ### 4.3 Regras de reconciliação no login
 
@@ -158,7 +176,7 @@ no catálogo (o autor pode removê-la pelo Table Editor ou, no futuro, pelo app)
 
 ### 5.1 Aplicação no Supabase real (23/10/2026)
 
-Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 17).
+Projeto Supabase da conta (único, Postgres 17). O identificador fica fora do repositório.
 
 | Etapa | Resultado |
 |---|---|
@@ -189,7 +207,7 @@ Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 1
 | Configuração pública do Auth (`/auth/v1/settings`) | Login por e-mail ligado; confirmação de e-mail **obrigatória**; cadastro aberto. |
 | Leitura anônima de `account_data` | Recusada (HTTP 401). |
 | Chamada anônima de `save_account_data` | Recusada (HTTP 401, `42501 permission denied`). |
-| `npm run build` com `app/.env.production` | Bundle aponta para o projeto `zmyqalwxsbyqemmrdkpo`. |
+| `npm run build` com a URL e a chave do projeto | Bundle aponta para o projeto da conta. |
 | Build servido em `/mercado/` + Playwright, login com credencial inválida | O Auth real respondeu HTTP 400 e a tela mostrou "E-mail ou senha incorretos." Nenhum e-mail enviado, nenhuma conta criada. |
 
 **Não validado ainda:** cadastro real, cliques nos links de e-mail e a primeira
@@ -284,7 +302,7 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
-6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions". Continua pendente.** O usuário informou a troca, mas o merge do PR #2 (23/10/2026, 20:47 UTC) ainda disparou "pages build and deployment" junto com "Deploy PWA", o que só acontece com a origem "Deploy from a branch". Desta vez o app terminou por último (18 s depois) e ficou no ar; no próximo push o README pode voltar. Ao trocar, confirmar que o seletor mostra "GitHub Actions" depois de recarregar a página. **Atualização:** o usuário refez a troca; o merge do PR #3 serve de teste (o resultado fica no histórico abaixo).
+6. ~~GitHub → Pages → Source: "GitHub Actions"~~ **Comprovado em 23/10/2026:** o push do merge do PR #3 rodou só "Deploy PWA", sem "pages build and deployment". Registro anterior: O usuário informou a troca, mas o merge do PR #2 (23/10/2026, 20:47 UTC) ainda disparou "pages build and deployment" junto com "Deploy PWA", o que só acontece com a origem "Deploy from a branch". Desta vez o app terminou por último (18 s depois) e ficou no ar; no próximo push o README pode voltar. Ao trocar, confirmar que o seletor mostra "GitHub Actions" depois de recarregar a página. **Atualização:** o usuário refez a troca; o merge do PR #3 serve de teste (o resultado fica no histórico abaixo).
    Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
    disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
    de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
@@ -318,6 +336,11 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | Esqueci minha senha | **Não funciona** |
 | Dados de quem já usa o app | Preservados: no primeiro login, a base do aparelho passa a ser da conta (seção 4.3). O backup JSON continua recomendado como cópia extra. |
 
+7. **Criar os secrets `SUPABASE_URL` e `SUPABASE_ANON_KEY`** em GitHub → Settings →
+   Secrets and variables → Actions → Secrets, **antes** do merge do PR que tira o
+   `.env.production` do repositório. Sem eles, o deploy para (o site segue na
+   versão anterior). Esta sessão não tem ferramenta para criar secrets.
+
 ## 8. Próximos passos possíveis (fora do escopo atual)
 
 - Sincronização registro a registro (tabela por entidade), para mesclar
@@ -342,3 +365,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Catálogo de todos: tabela, publicação automática, tela em Produtos e opção na Config (seções 4.5 e 5.5). |
 | 23/10/2026 | URLs do Auth configuradas pelo usuário e verificadas (seção 7). |
 | 23/10/2026 | Merge do PR #2; nova versão no ar. Origem do Pages segue em "Deploy from a branch" (pendência 6). |
+| 23/10/2026 | Troca do Pages comprovada no push do PR #3. Chave e URL do Supabase movidas para secrets do GitHub (seção 4.6). |
