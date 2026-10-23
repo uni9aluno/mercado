@@ -41,6 +41,7 @@ import { EanCatalogPanel } from "./EanCatalogPanel";
 import { exportarExcel, planejarImportProdutos } from "./excelActions";
 import { FileButton } from "./FileButton";
 import { Panel } from "./Panel";
+import { SharedCatalogPanel } from "./SharedCatalogPanel";
 
 const AVISO_MS = 2500;
 
@@ -765,6 +766,9 @@ export function SettingsView() {
 
       {/* ---- Catálogo EAN (seção nova) ---- */}
       <EanCatalogPanel aviso={flash} />
+
+      {/* ---- Catálogo de todos (só com login) ---- */}
+      <SharedCatalogPanel aviso={flash} />
 
       {/* ---- Compartilhar / importar lista por código ---- */}
       <Panel title="Compartilhar / importar lista por código">

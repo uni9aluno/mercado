@@ -22,6 +22,7 @@ configuração (passo a passo no Supabase) fica em
 | 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
 | 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
 | 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
+| 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
 > só locais, via `.gitignore`). Este registro vai para o repositório porque o
@@ -118,6 +119,31 @@ configuração (passo a passo no Supabase) fica em
 
 No modo local (build sem Supabase), tudo continua como antes.
 
+### 4.5 Catálogo de todos (pedido 6)
+
+Entre as duas opções apresentadas pelo usuário (compartilhar o catálogo de uma conta
+com outra, ou um catálogo para todos), foi escolhido o **catálogo para todos**.
+
+**Premissa adotada:** "catálogo" é o cadastro de **Produtos** de cada conta. O
+catálogo de códigos de barras (`ean_catalog`) já era comum a todos.
+
+| Decisão | Motivo |
+|---|---|
+| Tabela única `shared_products`, separada dos dados da conta | Listas, compras e preços continuam privados e offline; o catálogo é só uma fonte para consultar e copiar. Trocar os produtos de cada conta por uma tabela global quebraria as referências das listas e compras e o funcionamento offline. |
+| Só dados de produto (nome, marca, categoria, unidade, embalagem, frequência, código de barras) | Preço, preço-alvo, mercado preferido, foto e histórico são hábitos da conta. Coberto por teste. |
+| Deduplicação por `chave` (nome + marca + embalagem, sem acento nem caixa) | O mesmo produto publicado por várias contas vira uma linha só; o primeiro a publicar é o autor. |
+| Todos leem; cada um publica em nome próprio e só altera ou remove o que publicou | Evita que uma conta sobrescreva o item de outra (mais restrito que o `ean_catalog`). |
+| Publicação automática, com opção de desligar em Config | Sem ela, o catálogo nasce vazio. Roda após cada sincronização e cobre todos os caminhos de cadastro (tela, código de barras, Excel, lista importada). **Ligada por padrão**: o que sai não é dado pessoal, mas qualquer usuário do app vê os produtos publicados. |
+| "Adicionar" copia o item para os produtos da conta, sem preços | Depois de copiado, o produto é só da conta; mudanças no catálogo não alteram a cópia. |
+
+| Onde | O que aparece |
+|---|---|
+| Produtos → **Catálogo** | Busca sem acento por nome e marca; "Adicionar" ou "Já está nos seus". Até 50 resultados por busca. |
+| Config → **Catálogo de todos** | "Publicar meus produtos automaticamente" e "Publicar meus produtos agora". |
+
+Limitação conhecida: renomear um produto publica uma nova entrada; a antiga continua
+no catálogo (o autor pode removê-la pelo Table Editor ou, no futuro, pelo app).
+
 ---
 
 ## 5. Validação executada
@@ -198,6 +224,25 @@ renderizado, não o app.
 - **Correção definitiva (pendência 6, seção 7):** trocar a origem do Pages para
   "GitHub Actions". Sem isso, qualquer push futuro pode tirar o app do ar de novo.
 
+### 5.5 Catálogo de todos (23/10/2026)
+
+Migração `app/supabase/migrations/20261023020000_shared_products.sql`, aplicada pelo
+conector. Teste no banco real com dois usuários fictícios (transação desfeita, sem resíduo):
+
+| Verificação | Resultado |
+|---|---|
+| Mesma `chave` publicada por duas contas | 1 linha só |
+| Outro usuário lê o item | Sim |
+| Outro usuário altera o item | 0 linhas afetadas (bloqueado) |
+| Publicar em nome de outro (`created_by` alheio) | Recusado |
+| Autor altera o próprio item | Permitido |
+| Acesso anônimo | Bloqueado |
+
+No app (Playwright, Supabase simulado): após o login, os 92 produtos da conta foram
+publicados apenas com os campos de produto (nenhum preço, mercado ou foto); o catálogo
+abriu em Produtos, "Adicionar" criou o produto e o botão passou a "Já está nos seus".
+Testes unitários: chave, conversões, pendências e busca (`src/domain/sharedCatalog.test.ts`).
+
 ---
 
 ## 6. Riscos e limitações
@@ -211,6 +256,7 @@ renderizado, não o app.
 | Cadastro aberto | Terceiros podem criar conta (sem ver dados alheios, por causa do RLS) | Desligar "Allow new users to sign up" depois de criar as contas |
 | E-mail padrão do Supabase | Limite baixo de envios por hora | Configurar SMTP próprio |
 | Duas publicações concorrentes no GitHub Pages | Um push pode trocar o app pelo README | Pendência 6 da seção 7 |
+| Catálogo de todos visível a qualquer usuário do app | Com cadastro aberto, desconhecidos veem os produtos publicados (sem preços nem histórico) | Desligar a publicação em Config, ou fechar o cadastro no Supabase |
 | Catálogo EAN compartilhado entre todas as contas do projeto | Uma conta pode gravar um nome errado para um código | Só usuários autenticados escrevem; sem exclusão pelo app; correção pelo Table Editor |
 
 ---
@@ -279,3 +325,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Merge do PR #1 na `main` por decisão do usuário, antes da configuração de URLs (seção 7). |
 | 23/10/2026 | Incidente do Pages (README no lugar do app) corrigido com novo deploy; causa registrada (seção 5.4). |
 | 23/10/2026 | Config ajustada ao modo com conta e catálogo EAN no projeto da conta (seções 4.4 e 5.3). |
+| 23/10/2026 | Catálogo de todos: tabela, publicação automática, tela em Produtos e opção na Config (seções 4.5 e 5.5). |

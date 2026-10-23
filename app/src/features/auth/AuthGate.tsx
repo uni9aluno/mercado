@@ -3,6 +3,7 @@ import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 import { db } from "@/db/schema";
 import { abriuPorRecuperacao, erroDoLink, supabase } from "@/integrations/supabase";
 import { donoLocal, iniciar, parar, reconciliar, type Conta } from "@/sync/accountSync";
+import { iniciarPublicador, pararPublicador } from "@/sync/publicador";
 import { Btn } from "@/ui";
 import { AuthCard, Aviso } from "./AuthCard";
 import { AuthContext } from "./AuthContext";
@@ -46,6 +47,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
         return;
       }
       iniciar(conta, r.offline);
+      iniciarPublicador(conta);
       setEstado({ tipo: "pronto", conta, offline: r.offline });
     } catch (e) {
       carregada.current = null;
@@ -85,6 +87,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           emRecuperacao.current = true;
           setEstado({ tipo: "recuperacao", conta: contaDe(session.user) });
         } else if (evento === "SIGNED_OUT") {
+          pararPublicador();
           parar();
           carregada.current = null;
           setEstado({ tipo: "login" });
@@ -97,6 +100,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => {
       ativo = false;
       sub.subscription.unsubscribe();
+      pararPublicador();
       parar();
     };
   }, [entrar]);

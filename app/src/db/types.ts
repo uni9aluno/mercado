@@ -185,12 +185,19 @@ export interface ShoppingSessionSettings {
   header: { data: string; paymentMethod: string; buyer: Buyer | null; purchaseType: string };
 }
 
+/** Catálogo de todos: publicar automaticamente os produtos desta conta. */
+export interface SharedCatalogSettings {
+  key: "sharedCatalog";
+  publicar: boolean;
+}
+
 export type SettingRow =
   | BudgetSettings
   | RulesSettings
   | UiSettings
   | BackupInfoSettings
   | EanCatalogSettings
-  | ShoppingSessionSettings;
+  | ShoppingSessionSettings
+  | SharedCatalogSettings;
 
 export type SettingKey = SettingRow["key"];
