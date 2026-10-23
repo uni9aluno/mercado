@@ -1,7 +1,7 @@
 # Registro: login por conta e dados no Supabase
 
 Registro do que foi pedido, do que foi decidido e do que foi feito. O guia de
-configuração (passo a passo no Supabase e no GitHub) fica em
+configuração (passo a passo no Supabase) fica em
 [CONTAS.md](CONTAS.md).
 
 | Item | Valor |
@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) (rascunho) |
 | Data | 23/10/2026 |
-| Situação | Código pronto. SQL aplicado e validado no projeto Supabase real. Faltam a configuração de Authentication, as variáveis no GitHub e o merge. |
+| Situação | Código pronto. SQL aplicado e validado no projeto real. Build de produção apontando para o projeto e testado contra o Auth real. Faltam: URLs de redirecionamento no painel do Auth (sem ferramenta no conector), backup JSON nos aparelhos e o merge. |
 
 ---
 
@@ -20,6 +20,7 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | 1 | "Quero criar uma página login para cada usuário com senha individual, e armazenar os dados de cada conta no supabase" | Tela de login com Supabase Auth (e-mail + senha por pessoa) e sincronização da base do app com a tabela `account_data`, uma linha por conta, protegida por RLS. |
 | 2 | "Documente o que você está fazendo e o que foi solicitado. Tudo no repositório" | Este arquivo, além de [CONTAS.md](CONTAS.md), do SQL versionado e das notas no README. |
 | 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
+| 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
 > só locais, via `.gitignore`). Este registro vai para o repositório porque o
@@ -48,7 +49,8 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | IndexedDB continua sendo a base de trabalho | Ler e gravar direto no Supabase | Mantém o app funcionando offline, que é requisito central da PWA. |
 | Controle otimista por `revision` (RPC `save_account_data`) | "Último que gravar vence" sem checagem | Impede que um aparelho sobrescreva sem perceber a gravação de outro. O conflito é detectado e a versão local vira cópia. |
 | Credenciais no build (`VITE_SUPABASE_*`) | Digitar URL e chave na tela, como no EAN | O login precisa existir antes de qualquer tela. Sem as variáveis, o app segue no modo local (nada quebra para quem não configurar). |
-| Variáveis do GitHub (não secrets) | Secrets | A anon key é pública por desenho e vai no JavaScript. Quem protege os dados é o RLS. |
+| URL e chave publishable em `app/.env.production`, versionado | Variáveis ou secrets do GitHub | A chave é pública por desenho e vai no JavaScript. Quem protege os dados é o RLS. Além disso, esta sessão não tem ferramenta para criar variáveis no GitHub, e variável vazia no workflow anularia o arquivo. |
+| Chave **publishable** (`sb_publishable_...`) | Chave legada `anon` (JWT) | Recomendada pelo Supabase: pode ser trocada sem invalidar as demais. Suportada pela versão do `supabase-js` usada. |
 | Fluxo `implicit` nos links de e-mail | PKCE | Com PKCE, o link precisa ser aberto no mesmo navegador que o pediu, o que quebra o PWA instalado no iOS. O token vem no fragmento (`#`) da URL, que não é enviado a servidor. |
 | Cadastro aberto por padrão | Cadastro fechado | Sem cadastro aberto, a primeira conta não pode ser criada pelo app. O guia explica como fechar depois de criar as contas do casal. |
 
@@ -83,7 +85,8 @@ configuração (passo a passo no Supabase e no GitHub) fica em
 | `src/sync/accountSync.ts` | Motor de sync: hooks do Dexie, debounce, envio, conflito, offline, saída. |
 | `src/sync/snapshot.ts` | Monta e valida o snapshot (formato do backup v3). |
 | `src/App.tsx` | Envolve o app no `AuthGate` quando `authEnabled`. |
-| `.github/workflows/deploy.yml` | Repassa `vars.SUPABASE_URL` e `vars.SUPABASE_ANON_KEY` ao build. |
+| `.env.production` | URL do projeto e chave publishable usadas no build de produção. |
+| `.github/workflows/deploy.yml` | Apenas um comentário: não repassar as variáveis vazias (anularia o `.env.production`). |
 | `.env.example` | Modelo para testar localmente. |
 
 ### 4.3 Regras de reconciliação no login
@@ -139,8 +142,19 @@ Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 1
   Como a tabela era nova e não tinha policies, o resultado é idêntico. No SQL
   Editor do painel, o script completo roda normalmente.
 
-**Não validado ainda:** login real pelo app publicado e envio de e-mails
-(confirmação e nova senha). Dependem das pendências 2 e 3 da seção 7.
+### 5.2 Configuração do build e teste contra o projeto real (23/10/2026)
+
+| Verificação | Resultado |
+|---|---|
+| Configuração pública do Auth (`/auth/v1/settings`) | Login por e-mail ligado; confirmação de e-mail **obrigatória**; cadastro aberto. |
+| Leitura anônima de `account_data` | Recusada (HTTP 401). |
+| Chamada anônima de `save_account_data` | Recusada (HTTP 401, `42501 permission denied`). |
+| `npm run build` com `app/.env.production` | Bundle aponta para o projeto `zmyqalwxsbyqemmrdkpo`. |
+| Build servido em `/mercado/` + Playwright, login com credencial inválida | O Auth real respondeu HTTP 400 e a tela mostrou "E-mail ou senha incorretos." Nenhum e-mail enviado, nenhuma conta criada. |
+
+**Não validado ainda:** cadastro real, cliques nos links de e-mail e a primeira
+sincronização com uma conta real. Não criei conta no seu projeto: isso enviaria
+e-mail e deixaria um usuário de teste em produção.
 
 ---
 
@@ -162,12 +176,23 @@ Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 1
 Responsável: dono do projeto Supabase e do repositório.
 
 1. ~~Rodar o SQL (seção 4.1)~~ **Feito em 23/10/2026** (seção 5.1).
-2. Authentication: Confirm email ligado, senha mínima 8+, Site URL e Redirect URLs
-   apontando para `https://uni9aluno.github.io/mercado/`.
-3. GitHub: criar as variáveis `SUPABASE_URL` e `SUPABASE_ANON_KEY` (chave `anon`,
-   nunca `service_role`).
-4. Fazer um backup JSON antes do primeiro deploy com login.
-5. Revisar e aprovar o PR #1; o merge na `main` dispara o deploy.
+2. **Painel do Supabase → Authentication → URL Configuration** (só pelo painel; o
+   conector não tem ferramenta para isso):
+   - Site URL = `https://uni9aluno.github.io/mercado/`
+   - Redirect URLs: adicionar `https://uni9aluno.github.io/mercado/`
+
+   Sem isso, os links de e-mail levam ao endereço padrão (`http://localhost:3000`).
+   A confirmação do e-mail acontece mesmo assim, ao clicar no link, mas a pessoa
+   cai numa página de erro e precisa voltar ao app por conta própria. A
+   **redefinição de senha não funciona** até essa configuração ser feita.
+   - Opcional, mesma área: senha mínima 8+ em Sign In / Providers → Email.
+   - Confirm email: **já está ligado** (verificado na seção 5.2).
+3. ~~Variáveis no GitHub~~ **Não é mais necessário**: a configuração foi para
+   `app/.env.production`.
+4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
+   login. Só pode ser feito no aparelho.
+5. Merge do PR #1 na `main`, que dispara o deploy e torna o login obrigatório no
+   app publicado. Aguarda sua decisão, porque depende do item 2.
 
 ## 8. Próximos passos possíveis (fora do escopo atual)
 
@@ -186,3 +211,4 @@ Responsável: dono do projeto Supabase e do repositório.
 | 23/10/2026 | Login, sincronização por conta, SQL, guia CONTAS.md e PR #1 (commit `dad4e0e`). |
 | 23/10/2026 | Este registro, a pedido do usuário. |
 | 23/10/2026 | Projeto Supabase reativado; SQL aplicado e validado pelo conector (seção 5.1). |
+| 23/10/2026 | Build de produção configurado em `app/.env.production`; testado contra o Auth real (seção 5.2). |

@@ -90,16 +90,25 @@ uso contínuo, configure um SMTP próprio em **Authentication → SMTP Settings*
 
 ## 4. Ligar no app publicado
 
-1. Supabase → **Settings → API**: copie a **Project URL** e a chave **`anon` `public`**.
-   **Nunca** use a `service_role` — ela ignora o RLS e daria acesso total a
-   qualquer pessoa que abrisse o app.
-2. GitHub → repositório → **Settings → Secrets and variables → Actions → Variables**:
-   - `SUPABASE_URL` = Project URL
-   - `SUPABASE_ANON_KEY` = anon key
-3. Rode o workflow **Deploy PWA no GitHub Pages** (ou faça um push na `main`).
+A URL do projeto e a chave **publishable** ficam em [`app/.env.production`](../.env.production),
+versionado. O build de produção (workflow **Deploy PWA no GitHub Pages**, a cada
+push na `main`) lê esse arquivo.
 
-As duas são variáveis (não secrets) porque vão no JavaScript público do app de
-qualquer forma; a proteção dos dados está no RLS, não no sigilo da chave.
+| Variável | Onde pegar no Supabase |
+|---|---|
+| `VITE_SUPABASE_URL` | Settings → API → Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Settings → API Keys → **Publishable key** (`sb_publishable_...`) ou a legada `anon` |
+
+Os dois valores vão no JavaScript público do app de qualquer forma; a proteção dos
+dados está no RLS, não no sigilo da chave. Por isso ficam no repositório, sem
+configuração extra no GitHub.
+
+> **Nunca** coloque ali a chave **secret** (`sb_secret_...`) nem a `service_role`:
+> elas ignoram o RLS e dariam acesso total a qualquer pessoa que abrisse o app.
+
+Para trocar de projeto, edite o arquivo. Para voltar ao modo local, sem login,
+apague as duas linhas. Não repasse essas variáveis vazias pelo workflow: no Vite,
+variável de ambiente definida, mesmo vazia, tem prioridade sobre o arquivo.
 
 ### Desenvolvimento local
 

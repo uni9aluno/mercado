@@ -36,12 +36,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # URL e chave pública do Supabase vêm de app/.env.production (versionado).
+      # Não repassar variáveis vazias aqui: no Vite, env do processo, mesmo vazia,
+      # tem prioridade sobre o arquivo e desligaria o login.
       - run: npm run build
-        env:
-          # Variáveis do repositório (Settings → Secrets and variables → Actions →
-          # Variables). Valores públicos; vazias = app sem login, só local.
-          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
