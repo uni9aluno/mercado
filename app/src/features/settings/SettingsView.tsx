@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { AccountPanel } from "@/features/auth/AccountPanel";
+import { useAuth } from "@/features/auth/AuthContext";
 import { repos } from "@/data";
 import type { BudgetSettings, Priority, RulesSettings } from "@/db/types";
 import {
@@ -42,6 +44,7 @@ import { Panel } from "./Panel";
 const AVISO_MS = 2500;
 
 export function SettingsView() {
+  const auth = useAuth();
   const products = useProducts();
   const stores = useStores();
   const categories = useCategories();
@@ -448,7 +451,9 @@ export function SettingsView() {
         itens={[
           "“Orçamento mensal” define o teto usado no Início: VR/VA mais o aporte em dinheiro.",
           "“Regras de preço” ajustam a tolerância (quanto acima do alvo ainda é aceitável) e o desconto usado para sugerir alvo em produtos sem alvo próprio.",
-          "Os dados ficam só neste navegador. O backup JSON é a única forma de levar a base para outro aparelho — use “Baixar backup completo” ou “Compartilhar backup”.",
+          auth
+            ? "Os dados ficam neste aparelho e são sincronizados com a sua conta. O backup JSON continua útil como cópia extra, fora da nuvem."
+            : "Os dados ficam só neste navegador. O backup JSON é a única forma de levar a base para outro aparelho — use “Baixar backup completo” ou “Compartilhar backup”.",
           "“Restaurar backup” substitui TODOS os dados atuais pelo arquivo escolhido. Não dá para desfazer.",
           "O painel cinza mostra quando foi o último backup, o tamanho da base e se o navegador está protegendo os dados contra descarte.",
         ]}
@@ -459,6 +464,8 @@ export function SettingsView() {
           {aviso}
         </div>
       )}
+
+      <AccountPanel />
 
       {/* ---- Orçamento mensal ---- */}
       <Panel title="Orçamento mensal">

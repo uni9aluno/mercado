@@ -72,7 +72,7 @@ O backup agora carrega uma verificação interna: se o arquivo chegar corrompido
 
 ## Como os dados funcionam
 
-As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`) — não há login nem sincronização dos dados do casal. A consulta automática envia somente o EAN à Open Food Facts e pode baixar a foto pública do produto. Se o catálogo Supabase opcional for configurado, a contribuição envia apenas nome, marca e tamanho; nunca fotos ou dados pessoais.
+As listas, compras, configurações e fotos ficam no próprio navegador (num banco IndexedDB chamado `MercadoDB`). Quando o build é publicado com as variáveis do Supabase, o app passa a exigir **login com e-mail e senha individual**, e os dados de cada conta são enviados para o Supabase e baixados nos outros aparelhos em que a pessoa entrar — ver **[app/docs/CONTAS.md](app/docs/CONTAS.md)**. Sem essa configuração, não há login nem sincronização. A consulta automática envia somente o EAN à Open Food Facts e pode baixar a foto pública do produto. Se o catálogo Supabase opcional for configurado, a contribuição envia apenas nome, marca e tamanho; nunca fotos ou dados pessoais.
 
 - **Funciona sem internet.** Depois da primeira abertura pelo endereço publicado, o PWA mantém o build em cache.
 - **Cada aparelho tem sua própria cópia.** Para levar os dados do celular para o computador (ou vice-versa), é preciso usar o **backup**: baixar o `.json` em um aparelho e restaurar no outro, em Config.
