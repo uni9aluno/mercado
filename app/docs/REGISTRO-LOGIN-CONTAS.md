@@ -9,7 +9,7 @@ configuração (passo a passo no Supabase) fica em
 | Branch | `claude/login-page-supabase-589o0b` |
 | Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas; origem do Pages trocada pelo usuário, com comprovação no próximo push na `main` (seção 7). |
+| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas. Origem do Pages **ainda em "Deploy from a branch"** (seção 7, pendência 6). |
 
 ---
 
@@ -284,7 +284,7 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
-6. ~~GitHub → Settings → Pages → Source: "GitHub Actions"~~ **Trocado pelo usuário em 23/10/2026.** A API do Pages não é acessível desta sessão; a comprovação é o próximo push na `main` não disparar mais "pages build and deployment".
+6. **GitHub → Settings → Pages → Build and deployment → Source: "GitHub Actions". Continua pendente.** O usuário informou a troca, mas o merge do PR #2 (23/10/2026, 20:47 UTC) ainda disparou "pages build and deployment" junto com "Deploy PWA", o que só acontece com a origem "Deploy from a branch". Desta vez o app terminou por último (18 s depois) e ficou no ar; no próximo push o README pode voltar. Ao trocar, confirmar que o seletor mostra "GitHub Actions" depois de recarregar a página.
    Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
    disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
    de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
@@ -340,4 +340,5 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Incidente do Pages (README no lugar do app) corrigido com novo deploy; causa registrada (seção 5.4). |
 | 23/10/2026 | Config ajustada ao modo com conta e catálogo EAN no projeto da conta (seções 4.4 e 5.3). |
 | 23/10/2026 | Catálogo de todos: tabela, publicação automática, tela em Produtos e opção na Config (seções 4.5 e 5.5). |
-| 23/10/2026 | URLs do Auth e origem do Pages configuradas pelo usuário; URLs verificadas (seção 7). |
+| 23/10/2026 | URLs do Auth configuradas pelo usuário e verificadas (seção 7). |
+| 23/10/2026 | Merge do PR #2; nova versão no ar. Origem do Pages segue em "Deploy from a branch" (pendência 6). |
