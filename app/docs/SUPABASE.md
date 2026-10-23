@@ -1,5 +1,11 @@
 # Opcional: catálogo de códigos de barras (EAN) no Supabase
 
+> **Com login (build com Supabase), este guia não se aplica.** O catálogo passa a
+> usar o mesmo projeto da conta, sem URL nem chave na Config, e a tabela aceita só
+> usuários autenticados: ver a migração
+> [`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql)
+> e [CONTAS.md](CONTAS.md). O conteúdo abaixo vale para o modo local, sem login.
+
 O preenchimento automático já funciona sem configuração: ao escanear ou digitar
 um código desconhecido, o app consulta a API pública Open Food Facts v3 e traz
 **nome, marca, peso e foto** quando disponíveis. Nenhuma chave é necessária.

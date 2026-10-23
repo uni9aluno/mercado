@@ -120,6 +120,18 @@ npm run dev
 
 ---
 
+### Catálogo de códigos de barras
+
+Com login, o catálogo EAN usa este mesmo projeto. Rode também
+[`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql).
+Só usuários autenticados leem e contribuem; nenhuma conta apaga linhas pelo app.
+
+### Catálogo de todos
+
+O catálogo de produtos comum a todos os usuários usa a tabela da migração
+[`supabase/migrations/20261023020000_shared_products.sql`](../supabase/migrations/20261023020000_shared_products.sql).
+Detalhes e decisões em [REGISTRO-LOGIN-CONTAS.md](REGISTRO-LOGIN-CONTAS.md), seção 4.5.
+
 ## 5. Primeiro acesso de quem já usa o app
 
 1. Faça um **backup JSON** em Config antes de publicar a versão com login

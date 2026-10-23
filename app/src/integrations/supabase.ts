@@ -49,6 +49,11 @@ export const supabase: SupabaseClient | null = authEnabled
     })
   : null;
 
+/** URL e chave pública do projeto da conta; null no modo local. */
+export function credenciaisConta(): { url: string; anonKey: string } | null {
+  return authEnabled ? { url: URL_PROJETO.replace(/\/+$/, ""), anonKey: ANON_KEY } : null;
+}
+
 /** endereço para onde os links de e-mail (confirmação, nova senha) devolvem. */
 export function urlRetorno(): string {
   return window.location.origin + import.meta.env.BASE_URL;

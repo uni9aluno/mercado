@@ -17,6 +17,7 @@
 import type { Table } from "dexie";
 import { repos } from "@/data";
 import { db } from "@/db/schema";
+import { seedIfEmpty } from "@/db/seed";
 import { backupJson } from "@/domain/backup";
 import { supabase } from "@/integrations/supabase";
 import { decidirReconciliacao } from "./reconcile";
@@ -490,6 +491,32 @@ export async function descarregar(): Promise<boolean> {
   }
   if (lerEstado().pendente) await enviar();
   return lerEstado().pendente;
+}
+
+/**
+ * Apaga os dados da CONTA (nuvem e este aparelho) e recomeça do catálogo
+ * inicial. Exige conexão: sem ela, o próximo login baixaria a versão antiga da
+ * nuvem e o "apagar" seria desfeito em silêncio.
+ */
+export async function apagarDadosDaConta(): Promise<void> {
+  const conta = contaAtual;
+  if (!conta) throw new Error("Nenhuma conta conectada.");
+  if (navigator.onLine === false) {
+    throw new Error("Sem conexão. Conecte-se para apagar os dados da conta.");
+  }
+  await comTrava(async () => {
+    // A revisão atual da nuvem vira a esperada: o envio a seguir sobrescreve sem conflito.
+    const remoto = await buscarRemoto(conta.id, false);
+    await limparBase();
+    await seedIfEmpty();
+    gravarEstado({ revisao: remoto?.revision ?? 0, pendente: true });
+  });
+  await descarregar();
+  if (lerEstado().pendente) {
+    throw new Error(
+      "Os dados foram apagados neste aparelho, mas o envio para a conta falhou. Tente “Sincronizar agora”.",
+    );
+  }
 }
 
 /** Encerra a sessão: apaga a base local e o estado da conta deste aparelho. */

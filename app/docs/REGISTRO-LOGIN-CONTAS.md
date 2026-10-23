@@ -7,9 +7,9 @@ configuração (passo a passo no Supabase) fica em
 | Item | Valor |
 |---|---|
 | Branch | `claude/login-page-supabase-589o0b` |
-| Pull request | [#1](https://github.com/uni9aluno/mercado/pull/1) |
+| Pull requests | [#1](https://github.com/uni9aluno/mercado/pull/1) (integrado); ajustes da Config no PR seguinte |
 | Data | 23/10/2026 |
-| Situação | Código pronto. SQL aplicado e validado no projeto real. Build de produção apontando para o projeto e testado contra o Auth real. Faltam: URLs de redirecionamento no painel do Auth (sem ferramenta no conector), backup JSON nos aparelhos e o merge. |
+| Situação | Login no ar desde 23/10/2026. URLs do Auth configuradas e verificadas; origem do Pages trocada pelo usuário, com comprovação no próximo push na `main` (seção 7). |
 
 ---
 
@@ -21,6 +21,8 @@ configuração (passo a passo no Supabase) fica em
 | 2 | "Documente o que você está fazendo e o que foi solicitado. Tudo no repositório" | Este arquivo, além de [CONTAS.md](CONTAS.md), do SQL versionado e das notas no README. |
 | 3 | "rode o SQL no meu projeto Supabase" (repetido depois de ativar o conector) | SQL aplicado pelo conector do Supabase e validado (seção 5.1). |
 | 4 | "Realize você o que falta" | Feito o que é possível pelas ferramentas disponíveis (seção 5.2). O que depende do painel do Supabase, dos aparelhos ou de decisão sua está na seção 7. |
+| 5 | "Não configurei as URLs no painel você faz isso. E ajuste a página de configuração para o cenário atual" | URLs: sem ferramenta para isso nesta sessão (seção 7). Config ajustada ao modo com conta (seção 4.4) e catálogo EAN movido para o projeto da conta (seção 5.3). |
+| 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
 > só locais, via `.gitignore`). Este registro vai para o repositório porque o
@@ -104,6 +106,44 @@ configuração (passo a passo no Supabase) fica em
 
 "Cópia" é uma entrada em **Config → Backups automáticos**, restaurável pela tela.
 
+### 4.4 Configuração ajustada ao modo com conta (pedido 5)
+
+| Ponto da tela | Antes | Agora, com conta |
+|---|---|---|
+| Painel "Dados" | "Os dados ficam neste navegador… o backup JSON leva a base de um aparelho para o outro" | Explica que os dados são sincronizados com a conta e que o backup JSON é cópia extra. "Último backup" vira "Último backup baixado", sem destaque de alerta. |
+| "Apagar todos os dados" | Apagava o banco local; com conta, a próxima sincronização podia trazer tudo de volta da nuvem ou espalhar o vazio, conforme o momento | "Apagar todos os dados da conta": confirmação explícita (neste e nos outros aparelhos; para só este aparelho, use "Sair"), exige conexão, recomeça do catálogo inicial e grava na nuvem sobrescrevendo a revisão atual. Coberto por teste. |
+| "Restaurar backup" | "Substitui todos os dados atuais" | Avisa que substitui os dados da conta, também nos outros aparelhos. |
+| Backups automáticos | "Não substituem o backup baixado" | Explica que guardam também a versão local substituída em conflito e que são apagados ao sair. |
+| Catálogo EAN | Pedia URL e anon key de um Supabase opcional | Usa o projeto da conta com o token da sessão; sem campos de URL/chave. Tabela restrita a usuários autenticados. |
+| Alerta "faça backup" no Início | Aparecia sempre que o último backup tinha mais de 7 dias (ou nunca) | Some com a conta: a nuvem é a cópia principal. |
+
+No modo local (build sem Supabase), tudo continua como antes.
+
+### 4.5 Catálogo de todos (pedido 6)
+
+Entre as duas opções apresentadas pelo usuário (compartilhar o catálogo de uma conta
+com outra, ou um catálogo para todos), foi escolhido o **catálogo para todos**.
+
+**Premissa adotada:** "catálogo" é o cadastro de **Produtos** de cada conta. O
+catálogo de códigos de barras (`ean_catalog`) já era comum a todos.
+
+| Decisão | Motivo |
+|---|---|
+| Tabela única `shared_products`, separada dos dados da conta | Listas, compras e preços continuam privados e offline; o catálogo é só uma fonte para consultar e copiar. Trocar os produtos de cada conta por uma tabela global quebraria as referências das listas e compras e o funcionamento offline. |
+| Só dados de produto (nome, marca, categoria, unidade, embalagem, frequência, código de barras) | Preço, preço-alvo, mercado preferido, foto e histórico são hábitos da conta. Coberto por teste. |
+| Deduplicação por `chave` (nome + marca + embalagem, sem acento nem caixa) | O mesmo produto publicado por várias contas vira uma linha só; o primeiro a publicar é o autor. |
+| Todos leem; cada um publica em nome próprio e só altera ou remove o que publicou | Evita que uma conta sobrescreva o item de outra (mais restrito que o `ean_catalog`). |
+| Publicação automática, com opção de desligar em Config | Sem ela, o catálogo nasce vazio. Roda após cada sincronização e cobre todos os caminhos de cadastro (tela, código de barras, Excel, lista importada). **Ligada por padrão**: o que sai não é dado pessoal, mas qualquer usuário do app vê os produtos publicados. |
+| "Adicionar" copia o item para os produtos da conta, sem preços | Depois de copiado, o produto é só da conta; mudanças no catálogo não alteram a cópia. |
+
+| Onde | O que aparece |
+|---|---|
+| Produtos → **Catálogo** | Busca sem acento por nome e marca; "Adicionar" ou "Já está nos seus". Até 50 resultados por busca. |
+| Config → **Catálogo de todos** | "Publicar meus produtos automaticamente" e "Publicar meus produtos agora". |
+
+Limitação conhecida: renomear um produto publica uma nova entrada; a antiga continua
+no catálogo (o autor pode removê-la pelo Table Editor ou, no futuro, pelo app).
+
 ---
 
 ## 5. Validação executada
@@ -156,6 +196,53 @@ Projeto `zmyqalwxsbyqemmrdkpo` (único da conta, região `us-west-2`, Postgres 1
 sincronização com uma conta real. Não criei conta no seu projeto: isso enviaria
 e-mail e deixaria um usuário de teste em produção.
 
+### 5.3 Catálogo EAN no projeto da conta (23/10/2026)
+
+Migração `app/supabase/migrations/20261023010000_ean_catalog_conta.sql`, aplicada pelo
+conector (sem `drop`, para não travar na confirmação de comando destrutivo).
+
+| Verificação | Resultado |
+|---|---|
+| Objetos | Tabela `ean_catalog` com RLS; policies `conectado le`, `conectado insere`, `conectado atualiza`; sem `delete`. |
+| Upsert autenticado (duas gravações do mesmo EAN) | Segunda gravação atualiza a primeira. |
+| EAN com letras | Recusado pelo CHECK. |
+| Acesso anônimo | Bloqueado. |
+| Resíduo do teste | Nenhum (0 linhas, 0 usuários de teste). |
+| Advisors de segurança | Nenhum alerta. |
+
+### 5.4 Incidente: site publicado mostrando o README (23/10/2026)
+
+Logo após o merge, `https://uni9aluno.github.io/mercado/` passou a exibir o README
+renderizado, não o app.
+
+- **Causa (anterior a este trabalho):** o GitHub Pages está com a origem "Deploy from
+  a branch", e o repositório também tem o workflow "Deploy PWA". A cada push na
+  `main`, as duas publicações rodam e **vence a que termina por último**. Neste push,
+  a do README terminou 9 s depois. Em 12/09 o app venceu por acaso.
+- **Correção imediata:** o workflow "Deploy PWA" foi disparado de novo manualmente e o
+  app voltou ao ar (bundle com o projeto Supabase confirmado no endereço publicado).
+- **Correção definitiva (pendência 6, seção 7):** trocar a origem do Pages para
+  "GitHub Actions". Sem isso, qualquer push futuro pode tirar o app do ar de novo.
+
+### 5.5 Catálogo de todos (23/10/2026)
+
+Migração `app/supabase/migrations/20261023020000_shared_products.sql`, aplicada pelo
+conector. Teste no banco real com dois usuários fictícios (transação desfeita, sem resíduo):
+
+| Verificação | Resultado |
+|---|---|
+| Mesma `chave` publicada por duas contas | 1 linha só |
+| Outro usuário lê o item | Sim |
+| Outro usuário altera o item | 0 linhas afetadas (bloqueado) |
+| Publicar em nome de outro (`created_by` alheio) | Recusado |
+| Autor altera o próprio item | Permitido |
+| Acesso anônimo | Bloqueado |
+
+No app (Playwright, Supabase simulado): após o login, os 92 produtos da conta foram
+publicados apenas com os campos de produto (nenhum preço, mercado ou foto); o catálogo
+abriu em Produtos, "Adicionar" criou o produto e o botão passou a "Já está nos seus".
+Testes unitários: chave, conversões, pendências e busca (`src/domain/sharedCatalog.test.ts`).
+
 ---
 
 ## 6. Riscos e limitações
@@ -168,6 +255,9 @@ e-mail e deixaria um usuário de teste em produção.
 | Sair sem internet | Alterações não enviadas são perdidas | Aviso e confirmação antes de sair |
 | Cadastro aberto | Terceiros podem criar conta (sem ver dados alheios, por causa do RLS) | Desligar "Allow new users to sign up" depois de criar as contas |
 | E-mail padrão do Supabase | Limite baixo de envios por hora | Configurar SMTP próprio |
+| Duas publicações concorrentes no GitHub Pages | Um push pode trocar o app pelo README | Pendência 6 da seção 7 |
+| Catálogo de todos visível a qualquer usuário do app | Com cadastro aberto, desconhecidos veem os produtos publicados (sem preços nem histórico) | Desligar a publicação em Config, ou fechar o cadastro no Supabase |
+| Catálogo EAN compartilhado entre todas as contas do projeto | Uma conta pode gravar um nome errado para um código | Só usuários autenticados escrevem; sem exclusão pelo app; correção pelo Table Editor |
 
 ---
 
@@ -176,8 +266,10 @@ e-mail e deixaria um usuário de teste em produção.
 Responsável: dono do projeto Supabase e do repositório.
 
 1. ~~Rodar o SQL (seção 4.1)~~ **Feito em 23/10/2026** (seção 5.1).
-2. **Painel do Supabase → Authentication → URL Configuration** (só pelo painel; o
-   conector não tem ferramenta para isso):
+2. ~~Painel do Supabase → Authentication → URL Configuration~~ **Feito pelo usuário e verificado em 23/10/2026** (ver abaixo). Registro anterior: o
+   usuário pediu que eu fizesse (pedido 5), mas nesta sessão não há ferramenta para
+   isso: o conector do Supabase não altera configurações do Auth e o conector do
+   Chrome não está disponível. Precisa ser feito no painel:
    - Site URL = `https://uni9aluno.github.io/mercado/`
    - Redirect URLs: adicionar `https://uni9aluno.github.io/mercado/`
 
@@ -192,6 +284,24 @@ Responsável: dono do projeto Supabase e do repositório.
 4. Fazer um backup JSON em Config, em cada aparelho, antes do primeiro deploy com
    login. Só pode ser feito no aparelho.
 5. ~~Merge do PR #1~~ **Feito em 23/10/2026, por decisão do usuário** (ver abaixo).
+6. ~~GitHub → Settings → Pages → Source: "GitHub Actions"~~ **Trocado pelo usuário em 23/10/2026.** A API do Pages não é acessível desta sessão; a comprovação é o próximo push na `main` não disparar mais "pages build and deployment".
+   Elimina a publicação concorrente do README (seção 5.4). Também sem ferramenta
+   disponível nesta sessão. Até lá, se o site voltar a mostrar o README, basta rodar
+   de novo o workflow "Deploy PWA no GitHub Pages" (aba Actions → Run workflow).
+
+### Verificação das URLs do Auth (23/10/2026)
+
+Teste sem criar conta nem enviar e-mail: chamada a `/auth/v1/verify` com um token de
+recuperação inválido, que faz o Auth redirecionar com o erro no fragmento da URL.
+
+| `redirect_to` pedido | Para onde o Auth mandou | Conclusão |
+|---|---|---|
+| `https://uni9aluno.github.io/mercado/` | `https://uni9aluno.github.io/mercado/#error=…otp_expired…` | Endereço do app está na lista de Redirect URLs |
+| endereço fora da lista | `https://uni9aluno.github.io/mercado#error=…` | Site URL aponta para o app; endereços não autorizados são recusados |
+
+O app trata `otp_expired` no retorno ("O link do e-mail expirou ou já foi usado").
+Com isso, a tabela de trade-off abaixo deixa de valer: confirmação de cadastro e
+"Esqueci minha senha" voltam ao app.
 
 ### Decisão registrada: merge antes da configuração de URLs (23/10/2026)
 
@@ -227,3 +337,7 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Projeto Supabase reativado; SQL aplicado e validado pelo conector (seção 5.1). |
 | 23/10/2026 | Build de produção configurado em `app/.env.production`; testado contra o Auth real (seção 5.2). |
 | 23/10/2026 | Merge do PR #1 na `main` por decisão do usuário, antes da configuração de URLs (seção 7). |
+| 23/10/2026 | Incidente do Pages (README no lugar do app) corrigido com novo deploy; causa registrada (seção 5.4). |
+| 23/10/2026 | Config ajustada ao modo com conta e catálogo EAN no projeto da conta (seções 4.4 e 5.3). |
+| 23/10/2026 | Catálogo de todos: tabela, publicação automática, tela em Produtos e opção na Config (seções 4.5 e 5.5). |
+| 23/10/2026 | URLs do Auth e origem do Pages configuradas pelo usuário; URLs verificadas (seção 7). |
