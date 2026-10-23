@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { forecast } from "./forecast";
 
 const DIA = 86_400_000;
-const isoAtras = (dias: number) =>
-  new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
+const isoAtras = (dias: number) => new Date(Date.now() - dias * DIA).toISOString().slice(0, 10);
 
 describe("forecast", () => {
   it("menos de 2 compras: sem previsão", () => {
@@ -39,7 +38,10 @@ describe("forecast", () => {
   it("dedup remove datas repetidas antes de contar", () => {
     const d = isoAtras(20);
     const semDedup = forecast({ datas: [d, d, isoAtras(5)], frequency: "30 dias" });
-    const comDedup = forecast({ datas: [d, d, isoAtras(5)], frequency: "30 dias" }, { dedup: true });
+    const comDedup = forecast(
+      { datas: [d, d, isoAtras(5)], frequency: "30 dias" },
+      { dedup: true },
+    );
     // sem dedup: 3 "compras", 2 intervalos (0 e 15) -> só 15 vale -> 1 intervalo -> fallback 30
     expect(semDedup.media).toBe(30);
     // com dedup: 2 compras -> 1 intervalo -> fallback 30 também, mas amostras diferentes

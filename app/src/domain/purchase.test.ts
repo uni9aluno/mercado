@@ -17,10 +17,9 @@ describe("registrarCompra", () => {
   afterEach(() => db.close());
 
   it("grava a compra e os itens, total = soma quando não informado", async () => {
-    const cats = await db.categories.bulkAdd(
-      [{ uid: crypto.randomUUID(), name: "Mercearia" }],
-      { allKeys: true },
-    );
+    const cats = await db.categories.bulkAdd([{ uid: crypto.randomUUID(), name: "Mercearia" }], {
+      allKeys: true,
+    });
     void cats;
     const storeUid = await repos.stores.create("Atacadão");
     const p1 = await repos.products.create({
@@ -140,7 +139,13 @@ describe("registrarCompra", () => {
 
     const { baixados } = await registrarCompra(
       repos,
-      { date: "2026-09-01", storeId: storeUid, paymentMethod: "PIX", buyer: null, purchaseType: "Planejada" },
+      {
+        date: "2026-09-01",
+        storeId: storeUid,
+        paymentMethod: "PIX",
+        buyer: null,
+        purchaseType: "Planejada",
+      },
       [{ productId: prod, productName: "P", quantity: 1, unitPrice: 3 }],
       { baixarNaLista: false },
     );

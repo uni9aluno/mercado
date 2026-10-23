@@ -291,9 +291,7 @@ export function History() {
                           </div>
                         ))}
 
-                        {p.notes && (
-                          <p className="mt-2 text-xs italic text-gray-500">{p.notes}</p>
-                        )}
+                        {p.notes && <p className="mt-2 text-xs italic text-gray-500">{p.notes}</p>}
 
                         {p.rating && (
                           <p className="mt-2 text-xs font-medium text-gray-600">
@@ -313,9 +311,7 @@ export function History() {
                           </button>
                           {naoLegacy && (
                             <button
-                              onClick={() =>
-                                setAvaliando(avaliando === p.id ? null : p.id)
-                              }
+                              onClick={() => setAvaliando(avaliando === p.id ? null : p.id)}
                               className="text-xs font-medium text-gray-600 hover:text-gray-800"
                             >
                               {p.rating ? "Reavaliar" : "Avaliar"}

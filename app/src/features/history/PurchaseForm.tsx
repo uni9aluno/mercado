@@ -18,7 +18,13 @@ import { repos } from "@/data";
 import { priceFor } from "@/domain/priceIndex";
 import { fmt, today } from "@/lib/text";
 import { BUYERS, PAYMENT_METHODS, PURCHASE_TYPES } from "@/lib/constants";
-import { LEGACY_PRODUCT_ID, type Buyer, type Id, type Purchase, type PurchaseItem } from "@/db/types";
+import {
+  LEGACY_PRODUCT_ID,
+  type Buyer,
+  type Id,
+  type Purchase,
+  type PurchaseItem,
+} from "@/db/types";
 import { Btn, Empty, Icon, Input, Modal, ProductPicker, Select } from "@/ui";
 import { selectOnFocus } from "@/ui";
 
@@ -204,7 +210,9 @@ export function PurchaseForm({ purchase: pu, onClose: fechar }: Props) {
 
       <Select
         label="Mercado"
-        options={storeById.size ? [...storeById.values()].map((s) => ({ value: s.id, label: s.name })) : []}
+        options={
+          storeById.size ? [...storeById.values()].map((s) => ({ value: s.id, label: s.name })) : []
+        }
         placeholder="Selecionar"
         value={mer}
         onChange={(e) => setMer(e.target.value)}

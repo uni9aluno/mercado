@@ -8,9 +8,7 @@
 
 /** `getUserMedia` só existe em contexto seguro (HTTPS ou localhost). */
 export function hasCamStream(): boolean {
-  return !!(
-    navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function"
-  );
+  return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function");
 }
 
 /**

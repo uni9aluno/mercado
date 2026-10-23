@@ -131,10 +131,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
     if (it.status !== "A comprar" || !activeListIds.has(it.listId)) continue;
     pendentes.add(it.productId);
     pendingCount++;
-    const preco = priceFor(
-      productById.get(it.productId),
-      priceIndex.get(it.productId),
-    );
+    const preco = priceFor(productById.get(it.productId), priceIndex.get(it.productId));
     if (preco) listTotal += (it.quantity || 1) * preco;
   }
 
@@ -161,12 +158,7 @@ export function computeDashboard(inp: DashboardInput): DashboardData {
   if (listTotal > total) {
     alertas.push({
       t: "warn",
-      m:
-        "As listas ativas somam " +
-        fmt(listTotal) +
-        ", acima do orçamento de " +
-        fmt(total) +
-        ".",
+      m: "As listas ativas somam " + fmt(listTotal) + ", acima do orçamento de " + fmt(total) + ".",
     });
   }
 

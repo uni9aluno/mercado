@@ -61,16 +61,15 @@ export function forecast(input: ForecastInput, opts: ForecastOptions = {}): Fore
   const intervalos: number[] = [];
   for (let k = 1; k < datas.length; k++) {
     const dif =
-      (new Date(datas[k] + "T12:00:00").getTime() - new Date(datas[k - 1] + "T12:00:00").getTime()) /
+      (new Date(datas[k] + "T12:00:00").getTime() -
+        new Date(datas[k - 1] + "T12:00:00").getTime()) /
       DIA_MS;
     if (dif > 0) intervalos.push(dif);
   }
 
   const cadastrado = FREQ_DAYS[input.frequency];
   const media =
-    intervalos.length >= 2
-      ? intervalos.reduce((x, y) => x + y, 0) / intervalos.length
-      : cadastrado;
+    intervalos.length >= 2 ? intervalos.reduce((x, y) => x + y, 0) / intervalos.length : cadastrado;
 
   if (!media) return { ...vazio, ultima, amostras: datas.length };
 

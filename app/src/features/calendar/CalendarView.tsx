@@ -152,27 +152,19 @@ export function CalendarView() {
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-gray-500">
           {dados.mercados.map((sid) => (
             <span key={sid} className="flex items-center gap-1">
-              <i
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: corMercado(sid) }}
-              />
+              <i className="h-2 w-2 rounded-full" style={{ backgroundColor: corMercado(sid) }} />
               {storeById.get(sid)?.name || "Mercado removido"}
             </span>
           ))}
           <span className="flex items-center gap-1">
-            <i
-              className="h-2 w-2 rounded-full"
-              style={{ border: "1px dashed " + COR_PREVISAO }}
-            />
+            <i className="h-2 w-2 rounded-full" style={{ border: "1px dashed " + COR_PREVISAO }} />
             Previsão
           </span>
         </div>
 
         {selecionadas.length > 1 && (
           <div className="mt-4 border-t border-gray-100 pt-3">
-            <h3 className="mb-2 text-sm font-medium text-gray-900">
-              Compras do dia {dia}
-            </h3>
+            <h3 className="mb-2 text-sm font-medium text-gray-900">Compras do dia {dia}</h3>
             {selecionadas.map((pu) => (
               <button
                 key={pu.id}
@@ -197,9 +189,7 @@ export function CalendarView() {
             {itensDetalhe.map((it) => (
               <div key={it.id} className="flex justify-between gap-2 text-sm">
                 <span className="text-gray-600">{it.productName}</span>
-                <span className="font-medium">
-                  {it.quantity + " × " + fmt(it.unitPrice)}
-                </span>
+                <span className="font-medium">{it.quantity + " × " + fmt(it.unitPrice)}</span>
               </div>
             ))}
             <div className="mt-2 flex justify-between border-t pt-2 font-semibold">

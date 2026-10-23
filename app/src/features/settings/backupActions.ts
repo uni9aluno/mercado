@@ -94,8 +94,7 @@ export async function compartilharBackup(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export type ResultadoRestore =
-  | { ok: true }
-  | { ok: false; motivo: "corrompido" | "invalido"; detalhe?: string };
+  { ok: true } | { ok: false; motivo: "corrompido" | "invalido"; detalhe?: string };
 
 /**
  * Restaura a partir do TEXTO cru de um backup (arquivo lido ou `autoBackups.data`).

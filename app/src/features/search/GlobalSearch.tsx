@@ -27,7 +27,9 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
     if (target.length < 2) return null;
     const matches = (text: unknown) => norm(text).includes(target);
 
-    const matchingProducts = products.filter((product) => matches(product.name) || matches(product.brand));
+    const matchingProducts = products.filter(
+      (product) => matches(product.name) || matches(product.brand),
+    );
     const productIds = new Set(matchingProducts.map((product) => product.id));
     const matchingLists = lists.filter((list) => matches(list.name));
     const matchingItems = items.filter(
@@ -36,7 +38,8 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
     const matchingStores = stores.filter((store) => matches(store.name));
     const matchingPurchases = purchases
       .filter((purchase) => {
-        const storeName = purchase.storeName ?? (purchase.storeId ? storeById.get(purchase.storeId)?.name : "");
+        const storeName =
+          purchase.storeName ?? (purchase.storeId ? storeById.get(purchase.storeId)?.name : "");
         if (matches(storeName)) return true;
         return (itemsByPurchase.get(purchase.id) ?? []).some((item) => matches(item.productName));
       })
@@ -74,7 +77,11 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
   };
 
   const row = (key: string, title: string, subtitle: string | null, action: () => void) => (
-    <button key={key} onClick={action} className="w-full rounded-lg px-2 py-2 text-left hover:bg-gray-50">
+    <button
+      key={key}
+      onClick={action}
+      className="w-full rounded-lg px-2 py-2 text-left hover:bg-gray-50"
+    >
       <div className="truncate text-sm text-gray-900">{title}</div>
       {subtitle && <div className="truncate text-xs text-gray-500">{subtitle}</div>}
     </button>
@@ -87,18 +94,26 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
           {label} ({total})
         </div>
         <div className="divide-y divide-gray-100">{children}</div>
-        {total > shown && <div className="mt-1 px-2 text-xs text-gray-400">mostrando os {shown} primeiros</div>}
+        {total > shown && (
+          <div className="mt-1 px-2 text-xs text-gray-400">mostrando os {shown} primeiros</div>
+        )}
       </div>
     ) : null;
 
   return (
     <Modal open onClose={onClose} title="Buscar">
       <div ref={box} className="mb-3">
-        <SearchBox value={term} onChange={setTerm} placeholder="Produto, lista, compra ou mercado" />
+        <SearchBox
+          value={term}
+          onChange={setTerm}
+          placeholder="Produto, lista, compra ou mercado"
+        />
       </div>
       {results ? (
         results.total === 0 ? (
-          <p className="py-3 text-center text-sm text-gray-500">Nada encontrado para “{term.trim()}”.</p>
+          <p className="py-3 text-center text-sm text-gray-500">
+            Nada encontrado para “{term.trim()}”.
+          </p>
         ) : (
           <div>
             {group(
@@ -135,11 +150,17 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
               results.purchases.length,
               results.purchases.map((purchase) => {
                 const purchaseItems = itemsByPurchase.get(purchase.id) ?? [];
-                const total = purchase.total ?? purchaseItems.reduce((sum, item) => sum + (item.total ?? 0), 0);
+                const total =
+                  purchase.total ?? purchaseItems.reduce((sum, item) => sum + (item.total ?? 0), 0);
                 const storeName =
-                  purchase.storeName ?? (purchase.storeId ? storeById.get(purchase.storeId)?.name : null) ?? "Sem mercado";
-                return row(`c${purchase.id}`, `${storeName} · ${brDate(purchase.date)}`, fmt(total), () =>
-                  go("history"),
+                  purchase.storeName ??
+                  (purchase.storeId ? storeById.get(purchase.storeId)?.name : null) ??
+                  "Sem mercado";
+                return row(
+                  `c${purchase.id}`,
+                  `${storeName} · ${brDate(purchase.date)}`,
+                  fmt(total),
+                  () => go("history"),
                 );
               }),
             )}
@@ -163,13 +184,17 @@ export function GlobalSearch({ onClose, onNavigate }: Props) {
               results.stores.length,
               results.stores.map((store) => {
                 const count = purchases.filter((purchase) => purchase.storeId === store.id).length;
-                return row(`m${store.id}`, store.name, `${count} compra(s) registrada(s)`, () => go("compare"));
+                return row(`m${store.id}`, store.name, `${count} compra(s) registrada(s)`, () =>
+                  go("compare"),
+                );
               }),
             )}
           </div>
         )
       ) : (
-        <p className="py-3 text-center text-sm text-gray-500">Digite ao menos 2 letras para buscar.</p>
+        <p className="py-3 text-center text-sm text-gray-500">
+          Digite ao menos 2 letras para buscar.
+        </p>
       )}
     </Modal>
   );

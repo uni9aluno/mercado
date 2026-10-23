@@ -31,8 +31,22 @@ const productById = new Map<string, Product>([
 ]);
 
 const itensLista = [
-  { id: "s1", productId: "arroz", status: "A comprar" as const, priority: "Alta" as const, listId: "L", quantity: 2 },
-  { id: "s2", productId: "feijao", status: "A comprar" as const, priority: "Média" as const, listId: "L", quantity: 1 },
+  {
+    id: "s1",
+    productId: "arroz",
+    status: "A comprar" as const,
+    priority: "Alta" as const,
+    listId: "L",
+    quantity: 2,
+  },
+  {
+    id: "s2",
+    productId: "feijao",
+    status: "A comprar" as const,
+    priority: "Média" as const,
+    listId: "L",
+    quantity: 1,
+  },
 ];
 
 describe("linhasPorLoja", () => {
@@ -62,7 +76,14 @@ describe("linhasPorLoja", () => {
     const pb = new Map(productById);
     pb.set("novo", semNada);
     const lista = [
-      { id: "s9", productId: "novo", status: "A comprar" as const, priority: "Média" as const, listId: "L", quantity: 1 },
+      {
+        id: "s9",
+        productId: "novo",
+        status: "A comprar" as const,
+        priority: "Média" as const,
+        listId: "L",
+        quantity: 1,
+      },
     ];
     const cesta = compararCesta(lista, pb, priceIndex, ["lojaA"], "recent");
     const rows = linhasPorLoja(cesta.linhas, priceIndex, ["lojaA"], "recent");

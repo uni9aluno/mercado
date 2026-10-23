@@ -9,20 +9,12 @@
 import { repos } from "@/data";
 import type { PriceEntry } from "@/domain/priceIndex";
 import { FREQ_DAYS, DIA_MS } from "@/lib/constants";
-import type {
-  Product,
-  PurchaseItem,
-  ShoppingItem,
-  ShoppingList,
-  Store,
-} from "@/db/types";
+import type { Product, PurchaseItem, ShoppingItem, ShoppingList, Store } from "@/db/types";
 
 /** "dd/mm" local — sufixo dos nomes de lista clonada. */
 export function diaMes(): string {
   const d = new Date();
-  return (
-    String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0")
-  );
+  return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
 }
 
 /**
@@ -94,10 +86,7 @@ interface CloneCtx {
  * mercado `storeId`. Devolve o id (uid) da lista, ou `null` se não há compra
  * nesse mercado ou ela não tem itens de produto.
  */
-export async function clonarUltimaCompra(
-  ctx: CloneCtx,
-  storeId: string,
-): Promise<string | null> {
+export async function clonarUltimaCompra(ctx: CloneCtx, storeId: string): Promise<string | null> {
   const compras = ctx.purchases
     .filter((q) => q.storeId === storeId && !q.legacy)
     .sort((q, w) => (w.date || "").localeCompare(q.date || "") || w.id.localeCompare(q.id));
@@ -137,10 +126,7 @@ export async function clonarUltimaCompra(
  * Copia os itens pendentes de `lista` para uma lista ativa nova. Devolve o id
  * (uid) da nova lista, ou `null` se `lista` não tem itens pendentes.
  */
-export async function clonarLista(
-  ctx: CloneCtx,
-  lista: ShoppingList,
-): Promise<string | null> {
+export async function clonarLista(ctx: CloneCtx, lista: ShoppingList): Promise<string | null> {
   const pendentes = (ctx.shoppingByList.get(lista.id) || []).filter(
     (q) => q.status !== "Comprado" && q.status !== "Cancelado",
   );

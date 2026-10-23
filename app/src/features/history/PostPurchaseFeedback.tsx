@@ -48,8 +48,7 @@ export function PostPurchaseFeedback({ info, onSaved }: Props) {
 
   const salvar = async () => {
     if (!rating) return;
-    const faltaram =
-      rating === "faltou" ? info.items.filter((it) => faltando.has(it.id)) : [];
+    const faltaram = rating === "faltou" ? info.items.filter((it) => faltando.has(it.id)) : [];
     const nomes = faltaram.map((it) => it.name);
 
     // 1. a compra guarda os nomes do que faltou (display no Histórico/Calendário)

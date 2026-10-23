@@ -96,8 +96,20 @@ async function seedV4() {
     })) as number[];
 
   await db.table("shoppingItems").bulkAdd([
-    { productId: prodCarne, status: "A comprar", priority: "Alta", listId: listaMercado, quantity: 2 },
-    { productId: prodTomate, status: "A comprar", priority: "Média", listId: listaMercado, quantity: 1 },
+    {
+      productId: prodCarne,
+      status: "A comprar",
+      priority: "Alta",
+      listId: listaMercado,
+      quantity: 2,
+    },
+    {
+      productId: prodTomate,
+      status: "A comprar",
+      priority: "Média",
+      listId: listaMercado,
+      quantity: 1,
+    },
   ]);
 
   await db.table("autoBackups").add({ date: Date.now(), data: '{"v":2}' });
@@ -217,12 +229,10 @@ describe("migração v4 → v5 (preenche uid, reaponta FKs)", () => {
 
 describe("converterBackupParaUid", () => {
   it("detecta backup antigo (id numérico, sem uid)", () => {
-    expect(
-      precisaConverterBackup({ products: [{ id: 1, name: "x" } as never] }),
-    ).toBe(true);
-    expect(
-      precisaConverterBackup({ products: [{ id: "abc-uid", uid: "abc-uid" } as never] }),
-    ).toBe(false);
+    expect(precisaConverterBackup({ products: [{ id: 1, name: "x" } as never] })).toBe(true);
+    expect(precisaConverterBackup({ products: [{ id: "abc-uid", uid: "abc-uid" } as never] })).toBe(
+      false,
+    );
     expect(precisaConverterBackup({})).toBe(false);
   });
 

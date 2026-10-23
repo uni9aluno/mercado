@@ -105,8 +105,7 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
       image: form.image ?? null,
       // Foto trocada ou removida: o caminho antigo deixa de valer e a sincronização
       // de fotos envia a nova (ou apaga a antiga).
-      imagePath:
-        form.image && form.image === product?.image ? (product?.imagePath ?? null) : null,
+      imagePath: form.image && form.image === product?.image ? (product?.imagePath ?? null) : null,
     };
     onSave(saved);
   }
@@ -163,11 +162,7 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
         required
         autoFocus
       />
-      <Input
-        label="Marca"
-        value={str(form.brand)}
-        onChange={(e) => set("brand", e.target.value)}
-      />
+      <Input label="Marca" value={str(form.brand)} onChange={(e) => set("brand", e.target.value)} />
       <Input
         label="Grupo comparável"
         placeholder="Ex.: Café 500 g, Leite integral"
@@ -188,12 +183,7 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
             onChange={(e) => set("barcode", e.target.value.replace(/\D/g, "").slice(0, 14))}
           />
         </div>
-        <Btn
-          type="button"
-          variant="secondary"
-          className="mb-3"
-          onClick={() => setScan(true)}
-        >
+        <Btn type="button" variant="secondary" className="mb-3" onClick={() => setScan(true)}>
           Escanear código
         </Btn>
       </div>

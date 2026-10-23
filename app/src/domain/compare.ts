@@ -8,7 +8,13 @@
 
 import type { Product, Purchase, PurchaseItem, ShoppingItem, Store } from "@/db/types";
 import { JANELA_90 } from "@/lib/constants";
-import { baseContent, effectiveTarget, priceFor, type PriceEntry, type StoreStat } from "./priceIndex";
+import {
+  baseContent,
+  effectiveTarget,
+  priceFor,
+  type PriceEntry,
+  type StoreStat,
+} from "./priceIndex";
 
 export type ModoBase = "recent" | "avg90" | "record";
 
@@ -23,7 +29,10 @@ export function valorModo(st: StoreStat | undefined, modo: ModoBase): number | n
 /** idade em dias do preço (sempre pela lastDate). */
 export function idade(data: string | null | undefined): number | null {
   if (!data) return null;
-  return Math.max(0, Math.floor((Date.now() - new Date(data + "T12:00:00").getTime()) / 86_400_000));
+  return Math.max(
+    0,
+    Math.floor((Date.now() - new Date(data + "T12:00:00").getTime()) / 86_400_000),
+  );
 }
 
 // --- séries por produto (inclui compras sem storeId) ---
@@ -217,8 +226,7 @@ export function compararCesta(
     const kb = b.coverage >= 0.6 ? 0 : 1;
     return ka - kb || a.total - b.total;
   });
-  const one =
-    rows.find((r) => r.coverage >= 0.6 && r.complete) ?? rows[0] ?? null;
+  const one = rows.find((r) => r.coverage >= 0.6 && r.complete) ?? rows[0] ?? null;
 
   // (B) dividir em duas — busca exaustiva O(n²)
   let pair: OpcaoDuasLojas | null = null;
@@ -282,8 +290,7 @@ export function compararCesta(
     }
   }
 
-  const saving =
-    one && pair && pair.coverage + 1e-6 >= one.coverage ? one.total - pair.total : 0;
+  const saving = one && pair && pair.coverage + 1e-6 >= one.coverage ? one.total - pair.total : 0;
 
   return {
     linhas,

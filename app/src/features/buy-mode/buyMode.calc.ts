@@ -67,7 +67,10 @@ export function totalCarrinho(itens: ShoppingItem[], cart: Cart, priceFn: PriceF
 }
 
 /** contadores para os cabeçalhos: total, marcados, pendentes (= não marcados). */
-export function contadores(itens: ShoppingItem[], cart: Cart): {
+export function contadores(
+  itens: ShoppingItem[],
+  cart: Cart,
+): {
   total: number;
   marcados: number;
   pendentes: number;
