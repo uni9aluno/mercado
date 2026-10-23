@@ -36,6 +36,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # URL e chave pública do Supabase vêm de app/.env.production (versionado).
+      # Não repassar variáveis vazias aqui: no Vite, env do processo, mesmo vazia,
+      # tem prioridade sobre o arquivo e desligaria o login.
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
