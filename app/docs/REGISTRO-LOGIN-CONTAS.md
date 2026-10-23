@@ -26,6 +26,7 @@ configuração (passo a passo no Supabase) fica em
 | 8 | "Coloque a opção de tirar uma foto também, pois atualmente só existe a opção de selecionar uma foto já existente na galeria" | Cadastro de produto com dois botões: "Tirar foto" (abre a câmera no celular) e "Galeria". |
 | 9 | "Obs: as fotos também vão para o banco no formato mais recomendado" | Fotos como arquivo WebP no Supabase Storage (bucket privado, pasta por usuário); o snapshot leva só o caminho (seção 4.7). |
 | 10 | "Todos produtos adicionados, independente do usuário, podem ser visualizados por todos usuários" | Publicação no catálogo de todos passa a ser obrigatória e inclui a foto (seção 4.7). |
+| 11 | "Utilize as melhores práticas de desenvolvimento" | CI em todo pull request (formatação, lint, tipos, testes, build), formatação padronizada em commit separado, teste da sincronização de fotos (seção 4.8). |
 | 6 | "O catálogo deve poder ser compartilhado com usuário… Vamos usar crie um catálogo para todos usuários" | Catálogo de produtos comum a todos os usuários (seções 4.5 e 5.5). |
 
 > O commit `d09c666` havia tirado do GitHub os documentos de processo (ficavam
@@ -137,6 +138,20 @@ Validação: regras do bucket testadas no banco real (pasta própria aceita, alh
 recusada, outro usuário lê mas não altera, anônimo não vê; transação desfeita) e
 fluxo completo no navegador com Supabase simulado (upload WebP, snapshot só com o
 caminho, `photo_path` publicado no catálogo). 187 testes.
+
+### 4.8 Práticas de desenvolvimento (pedido 11)
+
+| Lacuna encontrada | O que foi feito |
+|---|---|
+| Lint, testes e build só rodavam no push para a `main`, depois do merge; nenhum PR era verificado | Workflow **CI** (`.github/workflows/ci.yml`) em todo pull request: `format:check`, `lint`, `typecheck`, `test`, `build`. Sem secrets, permissão só de leitura, cancela execuções antigas do mesmo PR. |
+| 36 arquivos fora do padrão do Prettier, sem verificação | Formatação aplicada num commit separado, só de formatação, listado em `.git-blame-ignore-revs`; tabelas de dados do seed marcadas com `prettier-ignore` (um registro por linha). |
+| Sincronização de fotos sem teste da camada de execução | `src/sync/fotos.test.ts`: envio, download em aparelho novo, limpeza de órfãos preservando o catálogo, caminho inválido. |
+| Conversão de Blob dependia de `FileReader` (só navegador) | `Blob.arrayBuffer()`, que funciona igual no navegador e nos testes. |
+| Scripts sem verificação de tipos isolada | `npm run typecheck` e `npm run format:check`. |
+
+Fora do escopo, registrado: há 6 PRs do Dependabot abertos (#5 a #10) com atualizações de
+dependências de desenvolvimento e build. Com o CI em PRs, cada um passa a ser verificado
+automaticamente depois que este PR entrar na `main`.
 
 ### 4.3 Regras de reconciliação no login
 
@@ -397,3 +412,4 @@ Trade-off aceito, até o item 2 ser feito no painel:
 | 23/10/2026 | Troca do Pages comprovada no push do PR #3. Chave e URL do Supabase movidas para secrets do GitHub (seção 4.6). |
 | 23/10/2026 | Cadastro de produto: botões "Tirar foto" e "Galeria" (pedido 8). |
 | 23/10/2026 | Fotos no Supabase Storage (WebP) e catálogo de todos obrigatório, com foto (pedidos 9 e 10, seção 4.7). |
+| 23/10/2026 | CI em pull requests, formatação padronizada e teste da sincronização de fotos (pedido 11, seção 4.8). |

@@ -73,11 +73,16 @@ export function dataUriParaBlob(uri: string): Blob | null {
 }
 
 /** Blob baixado do Storage → data URI, para exibir e guardar no aparelho. */
-export function blobParaDataUri(blob: Blob): Promise<string | null> {
-  return new Promise((resolve) => {
-    const leitor = new FileReader();
-    leitor.onload = () => resolve(typeof leitor.result === "string" ? leitor.result : null);
-    leitor.onerror = () => resolve(null);
-    leitor.readAsDataURL(blob);
-  });
+export async function blobParaDataUri(blob: Blob): Promise<string | null> {
+  try {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let bin = "";
+    const PEDACO = 0x8000; // evita estourar a pilha de argumentos em fromCharCode
+    for (let i = 0; i < bytes.length; i += PEDACO) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + PEDACO));
+    }
+    return "data:" + (blob.type || "image/jpeg") + ";base64," + btoa(bin);
+  } catch {
+    return null;
+  }
 }

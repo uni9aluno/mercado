@@ -91,7 +91,17 @@ npm ci
 npm run dev
 ```
 
-O Vite mostra o endereço local. Os comandos `npm run lint`, `npm test` e `npm run build` fazem a validação completa.
+O Vite mostra o endereço local. Validação completa, a mesma que o CI roda em cada pull request:
+
+```powershell
+npm run format:check   # formatação (Prettier); `npm run format` corrige
+npm run lint           # ESLint, sem avisos tolerados
+npm run typecheck      # TypeScript
+npm test               # Vitest
+npm run build          # build de produção
+```
+
+O workflow **CI** verifica todo pull request antes do merge; o **Deploy PWA no GitHub Pages** publica a cada push na `main`. Commits só de formatação ficam em `.git-blame-ignore-revs` (`git config blame.ignoreRevsFile .git-blame-ignore-revs`).
 
 ### Instalar como aplicativo (PWA)
 
