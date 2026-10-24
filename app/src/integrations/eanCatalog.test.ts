@@ -1,10 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  lookupEan,
-  normalizeEanConfig,
-  parseQuantidade,
-  type EanCatalogConfig,
-} from "./eanCatalog";
+import type { EanCatalogConfig } from "./eanCatalog";
+
+// `searchEanByName` só funciona com login (ver o comentário na função) —
+// aqui simulamos uma conta logada com um projeto/sessão fake, sem depender
+// das env vars de build que `authEnabled` normalmente lê.
+let authEnabledMock = false;
+vi.mock("./supabase", () => ({
+  get authEnabled() {
+    return authEnabledMock;
+  },
+  credenciaisConta: () =>
+    authEnabledMock ? { url: "https://conta.supabase.co", anonKey: "conta-anon-key" } : null,
+  supabase: {
+    auth: {
+      getSession: async () => ({
+        data: { session: authEnabledMock ? { access_token: "token-conta" } : null },
+      }),
+    },
+  },
+}));
+
+const { lookupEan, normalizeEanConfig, parseQuantidade, searchEanByName } =
+  await import("./eanCatalog");
 
 // Config-base: Supabase configurado. Cada teste ajusta os toggles.
 const base: EanCatalogConfig = {
@@ -28,6 +45,7 @@ const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn());
+  authEnabledMock = false;
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -119,6 +137,84 @@ describe("lookupEan — Open Food Facts (reserva)", () => {
     });
     expect(d).toMatchObject({ name: "Arroz", packageSize: 5, packageUnit: "kg", source: "off" });
     expect(f).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("searchEanByName", () => {
+  const cfgOff = { ...base, off: true };
+
+  it("não consulta sem login, mesmo com tudo ligado", async () => {
+    const f = fetch as ReturnType<typeof vi.fn>;
+    const r = await searchEanByName("açúcar união", cfgOff);
+    expect(r).toEqual([]);
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("não consulta com menos de 3 caracteres", async () => {
+    authEnabledMock = true;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    const r = await searchEanByName("ab", cfgOff);
+    expect(r).toEqual([]);
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("não consulta quando off está desligado, mesmo com enabled true", async () => {
+    authEnabledMock = true;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    const r = await searchEanByName("açúcar", { ...base, off: false });
+    expect(r).toEqual([]);
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("não consulta quando enabled está desligado, mesmo com off true", async () => {
+    authEnabledMock = true;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    const r = await searchEanByName("açúcar", { ...cfgOff, enabled: false });
+    expect(r).toEqual([]);
+    expect(f).not.toHaveBeenCalled();
+  });
+
+  it("devolve os resultados com código, nome, marca e tamanho lidos, via a Edge Function da conta", async () => {
+    authEnabledMock = true;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockResolvedValueOnce(
+      resp({
+        products: [
+          {
+            code: "789-191-000-1972",
+            product_name: "Açúcar Refinado União 1kg",
+            brands: "UNIÃO",
+            quantity: "1kg",
+            image_front_small_url: "https://off/acucar.jpg",
+          },
+          { code: "", product_name: "sem código, ignorado" },
+          { code: "123", brands: "sem nome, ignorado" },
+        ],
+      }),
+    );
+    const r = await searchEanByName("açúcar união", cfgOff);
+    expect(r).toEqual([
+      {
+        barcode: "7891910001972",
+        name: "Açúcar Refinado União 1kg",
+        brand: "UNIÃO",
+        packageSize: 1,
+        packageUnit: "kg",
+        imageUrl: "https://off/acucar.jpg",
+        source: "off",
+      },
+    ]);
+    expect(String(f.mock.calls[0][0])).toContain(
+      "conta.supabase.co/functions/v1/ean-search-by-name?q=",
+    );
+    expect(f.mock.calls[0][1]?.headers).toMatchObject({ Authorization: "Bearer token-conta" });
+  });
+
+  it("lista vazia quando a busca falha ou devolve corpo inesperado", async () => {
+    authEnabledMock = true;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockResolvedValueOnce(resp({}, false));
+    expect(await searchEanByName("açúcar", cfgOff)).toEqual([]);
   });
 });
 

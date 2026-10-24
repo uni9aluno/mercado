@@ -130,6 +130,26 @@ Com login, o catálogo EAN usa este mesmo projeto. Rode também
 [`supabase/migrations/20261023010000_ean_catalog_conta.sql`](../supabase/migrations/20261023010000_ean_catalog_conta.sql).
 Só usuários autenticados leem e contribuem; nenhuma conta apaga linhas pelo app.
 
+### Busca de produto por nome
+
+Com login, o cadastro de produto também sugere nomes conforme você digita (não
+só por código de barras). Por quê só com login: a busca textual de verdade da
+Open Food Facts (`search.openfoodfacts.org`) não libera CORS para um fetch
+direto do navegador — precisa de um servidor no meio, e isso só existe no
+projeto Supabase da conta. Sem login, essa busca fica indisponível (a por
+código de barras continua funcionando igual, sem precisar de nada disto).
+
+Implementado como uma [Edge Function](https://supabase.com/docs/guides/functions),
+em [`supabase/functions/ean-search-by-name/index.ts`](../supabase/functions/ean-search-by-name/index.ts).
+Publicar:
+
+```powershell
+supabase functions deploy ean-search-by-name --project-ref <ref-do-projeto>
+```
+
+Sem publicar a function, a busca por nome simplesmente não aparece (o app pede
+e recebe lista vazia em silêncio) — nada quebra.
+
 ### Fotos de produto
 
 Com login, cada foto é guardada como **arquivo** no Supabase Storage, no bucket

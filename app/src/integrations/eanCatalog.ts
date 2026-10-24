@@ -5,10 +5,12 @@
 //  usuário. Reserva padrão: Open Food Facts v3 (base pública, sem chave), com
 //  `product_type=all` para cobrir alimentos, higiene, limpeza e outros itens.
 //
-//  Estas funções são consumidas na Fase 5 pelo BarcodeLookup. Aqui só existe
-//  a camada HTTP — sem React, sem Dexie, sem `document`/canvas. Qualquer
-//  erro/404/config incompleta vira `null` (ou no-op), nunca exceção que suba
-//  pra tela.
+//  Estas funções são consumidas na Fase 5 pelo BarcodeLookup (busca por EAN,
+//  que funciona sem login) e pelo ProductForm (busca por nome, via
+//  `searchEanByName` — só com login: ver a função para o porquê). Aqui só
+//  existe a camada HTTP — sem React, sem Dexie, sem `document`/canvas.
+//  Qualquer erro/404/config incompleta vira `null` (ou lista vazia, ou
+//  no-op), nunca exceção que suba pra tela.
 //
 //  Com login (build com Supabase), o catálogo usa o MESMO projeto da conta: URL
 //  e chave vêm do build, e as requisições levam o token da sessão. A tabela, nesse
@@ -76,6 +78,10 @@ export interface EanData {
   imageUrl: string | null;
   source: "supabase" | "off";
 }
+
+/** um resultado de busca por nome — EanData mais o código, para permitir
+ *  vincular/gravar o produto direto com o EAN já descoberto. */
+export type EanSearchResult = EanData & { barcode: string };
 
 // Redes móveis podem levar alguns segundos até resolver o domínio e responder.
 // Dez segundos ainda evita uma espera indefinida sem criar falsos negativos cedo demais.
@@ -225,6 +231,61 @@ export async function lookupEan(ean: string, cfg: EanCatalogConfig): Promise<Ean
   }
 
   return null;
+}
+
+interface OffSearchProduct {
+  code?: string;
+  product_name?: string;
+  brands?: string;
+  quantity?: string;
+  image_front_small_url?: string;
+}
+
+interface OffSearchResponse {
+  products?: OffSearchProduct[];
+}
+
+/**
+ * Busca produtos pelo nome digitado — via a Edge Function `ean-search-by-name`
+ * do projeto da conta (supabase/functions/). Só funciona com login: a busca
+ * textual de verdade do Open Food Facts (search.openfoodfacts.org) não libera
+ * CORS para um fetch direto do navegador, então precisa de um servidor no
+ * meio — e isso só existe no projeto Supabase da conta, não em qualquer
+ * URL/chave digitada na Config. Sem login, ou com `cfg.off` desligado, lista
+ * vazia — nunca lança.
+ */
+export async function searchEanByName(
+  nome: string,
+  cfg: EanCatalogConfig,
+): Promise<EanSearchResult[]> {
+  const termo = nome.trim();
+  if (!cfg.enabled || !cfg.off || termo.length < 3 || !authEnabled) return [];
+
+  const destino = await destinoSupabase(cfg);
+  if (!destino) return [];
+
+  const url = destino.base + "/functions/v1/ean-search-by-name?q=" + encodeURIComponent(termo);
+  const res = await fetchComTimeout(url, { headers: destino.headers });
+  if (!res || !res.ok) return [];
+
+  const body = (await res.json().catch(() => null)) as OffSearchResponse | null;
+  const produtos = Array.isArray(body?.products) ? body.products : [];
+
+  const resultados: EanSearchResult[] = [];
+  for (const p of produtos) {
+    if (!p.code || !p.product_name) continue;
+    const qt = parseQuantidade(p.quantity);
+    resultados.push({
+      barcode: String(p.code).replace(/\D/g, ""),
+      name: p.product_name.trim(),
+      brand: (p.brands ?? "").trim(),
+      packageSize: qt ? qt.size : null,
+      packageUnit: qt ? qt.unit : "",
+      imageUrl: (p.image_front_small_url ?? "").trim() || null,
+      source: "off",
+    });
+  }
+  return resultados;
 }
 
 export interface ContribRecord {

@@ -3,6 +3,8 @@
 // 8/12/13/14 confere, mas "não encontrado" no catálogo local não significa
 // "código inválido".
 
+import type { Product } from "@/db/types";
+
 /** só dígitos, no máximo 14 (comprimento GTIN-14). */
 export function normalizarCodigo(v: unknown): string {
   return String(v ?? "")
@@ -24,4 +26,23 @@ export function gtinValido(code: string): boolean {
     soma += Number(t[r]) * (n % 2 ? 1 : 3);
   }
   return (10 - (soma % 10)) % 10 === Number(t[t.length - 1]);
+}
+
+/** unidade do catálogo online (EAN ou busca por nome) → PackageUnit do app
+ *  (ou "" quando não bate com nenhuma das conhecidas). */
+export function normalizarUnidadeCatalogo(u: string): Product["packageUnit"] {
+  const mapa: Record<string, Product["packageUnit"]> = {
+    l: "L",
+    litro: "L",
+    litros: "L",
+    ml: "ml",
+    g: "g",
+    grama: "g",
+    gramas: "g",
+    kg: "kg",
+    un: "un",
+    unidade: "un",
+    unidades: "un",
+  };
+  return mapa[u.trim().toLowerCase()] ?? "";
 }

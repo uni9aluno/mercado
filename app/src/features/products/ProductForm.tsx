@@ -5,16 +5,29 @@
 // + `onDelete` opcional. Categorias, índice de preços e série de histórico são
 // lidos aqui pelos hooks — quem chama não precisa fornecer.
 
-import { useMemo, useState, type FormEvent } from "react";
-import { useCategories, useMaps, usePriceIndex, usePurchaseItems } from "@/hooks";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCategories,
+  useDebounced,
+  useMaps,
+  usePriceIndex,
+  usePurchaseItems,
+  useSetting,
+} from "@/hooks";
 import { buildSeries } from "@/domain/compare";
-import { normalizarCodigo } from "@/domain/barcode";
+import { normalizarCodigo, normalizarUnidadeCatalogo } from "@/domain/barcode";
 import { BarcodeScanner } from "@/features/barcode";
 import { Btn, Icon, Input, PriceSpark, Select, Thumb } from "@/ui";
 import { fmt, norm } from "@/lib/text";
 import { FREQUENCIES, PKG_UNITS, UNITS } from "@/lib/constants";
-import { fileToDataUri } from "@/integrations/image";
-import type { Id, Product } from "@/db/types";
+import { fetchImageDataUri, fileToDataUri } from "@/integrations/image";
+import {
+  normalizeEanConfig,
+  searchEanByName,
+  type EanSearchResult,
+} from "@/integrations/eanCatalog";
+import { authEnabled } from "@/integrations/supabase";
+import type { EanCatalogSettings, Id, Product } from "@/db/types";
 
 /** valores iniciais de cada campo — strings, o input controla. */
 const PRODUCT_EMPTY = {
@@ -69,6 +82,45 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
   const set = (k: keyof FormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
 
   const productId = (product && "id" in product ? product.id : undefined) as Id | undefined;
+
+  // --- autocomplete por nome (só em cadastro novo, sem EAN ainda digitado) ---
+  const eanCatalog = useSetting<EanCatalogSettings>("eanCatalog");
+  const eanConfig = normalizeEanConfig(eanCatalog);
+  const nomeDigitado = useDebounced(str(form.name), 350);
+  const [sugestoes, setSugestoes] = useState<EanSearchResult[]>([]);
+  const [sugestoesAbertas, setSugestoesAbertas] = useState(false);
+  const [buscandoNome, setBuscandoNome] = useState(false);
+  const buscaNomeSeq = useRef(0);
+
+  useEffect(() => {
+    if (productId || !authEnabled || !eanConfig.off || !nomeDigitado || nomeDigitado.length < 3) {
+      setSugestoes([]);
+      setBuscandoNome(false);
+      return;
+    }
+    const seq = ++buscaNomeSeq.current;
+    setBuscandoNome(true);
+    void searchEanByName(nomeDigitado, eanConfig).then((lista) => {
+      if (seq !== buscaNomeSeq.current) return; // resposta de uma busca já superada
+      setSugestoes(lista);
+      setBuscandoNome(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nomeDigitado, productId, eanConfig.off]);
+
+  async function escolherSugestao(s: EanSearchResult) {
+    setSugestoesAbertas(false);
+    const image = s.imageUrl ? await fetchImageDataUri(s.imageUrl) : null;
+    setForm((f) => ({
+      ...f,
+      name: s.name || f.name,
+      brand: s.brand || f.brand,
+      packageSize: s.packageSize ?? f.packageSize,
+      packageUnit: normalizarUnidadeCatalogo(s.packageUnit || "") || f.packageUnit,
+      barcode: s.barcode || f.barcode,
+      image: image ?? f.image,
+    }));
+  }
   const stat = productId ? priceIndex.get(productId) : undefined;
   const serie = useMemo(
     () => (productId ? buildSeries(purchaseItems, purchaseById).get(productId) : undefined),
@@ -155,13 +207,48 @@ export function ProductForm({ product, onSave, onDelete }: Props) {
         </div>
       </div>
 
-      <Input
-        label="Nome"
-        value={str(form.name)}
-        onChange={(e) => set("name", e.target.value)}
-        required
-        autoFocus
-      />
+      <div className="relative">
+        <Input
+          label="Nome"
+          value={str(form.name)}
+          onChange={(e) => {
+            set("name", e.target.value);
+            setSugestoesAbertas(true);
+          }}
+          onFocus={() => setSugestoesAbertas(true)}
+          onBlur={() => setTimeout(() => setSugestoesAbertas(false), 150)}
+          required
+          autoFocus
+          autoComplete="off"
+        />
+        {!productId && sugestoesAbertas && (buscandoNome || sugestoes.length > 0) && (
+          <div className="absolute inset-x-0 top-full z-10 -mt-2 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+            {buscandoNome && (
+              <div className="px-3 py-2 text-xs text-gray-400">Buscando produtos parecidos…</div>
+            )}
+            {!buscandoNome &&
+              sugestoes.map((s) => (
+                <button
+                  key={s.barcode}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void escolherSugestao(s)}
+                  className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-gray-50"
+                >
+                  <span className="font-medium text-gray-900">{s.name}</span>
+                  <span className="text-xs text-gray-500">
+                    {[
+                      s.brand,
+                      s.packageSize && s.packageUnit ? s.packageSize + " " + s.packageUnit : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
       <Input label="Marca" value={str(form.brand)} onChange={(e) => set("brand", e.target.value)} />
       <Input
         label="Grupo comparável"

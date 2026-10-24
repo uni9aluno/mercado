@@ -18,7 +18,7 @@
 import { useState } from "react";
 import { repos } from "@/data";
 import { useMaps, usePriceIndex, useProducts, useSetting } from "@/hooks";
-import { gtinValido, normalizarCodigo } from "@/domain/barcode";
+import { gtinValido, normalizarCodigo, normalizarUnidadeCatalogo } from "@/domain/barcode";
 import {
   lookupEan,
   normalizeEanConfig,
@@ -44,24 +44,6 @@ interface Props {
   title?: string;
 }
 
-/** unidades do catálogo online → PackageUnit do app (ou "" quando não bate). */
-function normalizarUnidade(u: string): Product["packageUnit"] {
-  const mapa: Record<string, Product["packageUnit"]> = {
-    l: "L",
-    litro: "L",
-    litros: "L",
-    ml: "ml",
-    g: "g",
-    grama: "g",
-    gramas: "g",
-    kg: "kg",
-    un: "un",
-    unidade: "un",
-    unidades: "un",
-  };
-  return mapa[u.trim().toLowerCase()] ?? "";
-}
-
 /** monta o prefill a partir do que o catálogo online devolveu. */
 function prefillDeEan(codigo: string, dados: EanData, image: string | null): BarcodePrefill {
   return {
@@ -69,7 +51,7 @@ function prefillDeEan(codigo: string, dados: EanData, image: string | null): Bar
     name: dados.name || "",
     brand: dados.brand || "",
     packageSize: dados.packageSize,
-    packageUnit: normalizarUnidade(dados.packageUnit || ""),
+    packageUnit: normalizarUnidadeCatalogo(dados.packageUnit || ""),
     image,
   };
 }
